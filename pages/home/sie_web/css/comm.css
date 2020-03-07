@@ -1,0 +1,37 @@
+/*
+*通用样式、引入字体等
+*陈家强
+*20190405
+*
+*/
+
+@font-face{
+    font-family: 'HYSongYunLangHeiW';
+    src : url('../fonts/HYSongYunLangHeiW.ttf');
+}
+
+.main-container{
+    flex: 1;
+}
+
+.login-rigster{
+    white-space: nowrap;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #FFFFFF;
+    width: 60px;
+    margin-left: 60px;
+}
+
+.login-rigster .login:hover{
+    cursor: pointer;
+    text-decoration: underline;
+}
+.login-rigster .rigster{
+    margin-left: 10px;
+}
+.login-rigster .rigster:hover{
+     cursor: pointer;
+     text-decoration: underline;
+ }

@@ -1,0 +1,45 @@
+<%
+    :sql_get_Module = "SELECT * FROM module_manage WHERE id =?"
+    :resultRecord = changeRecordSet(:sql_get_Module,S(:id))
+    :result_record_item=""
+    If :resultRecord=="ok"
+         Repeat
+            :result_record_item=jsonAddItem(:result_record_item, "name", S(name))
+            :result_record_item=jsonAddItem(:result_record_item, "url", S(url))
+            :result_record_item = jsonAddItem(:result_record_item,"sort",S(sort))
+            :result_record_item = jsonAddItem(:result_record_item,"icon",S(icon))
+            :ArrayClassification = ""
+             If classification_id !=",,"
+               :str  = classification_id
+               :length = strlen(:str)
+               :j = 2
+               While :j<:length
+                 :sql_getClassification = "select classification from cardiac_classification where id = ?"
+                 :resultRecord = changeRecordSet(:sql_getClassification,S(mid(:str,(:j-1),1))
+                 :ArrayClassification +=classification+","
+                 :j+= 2
+               EndWhile
+                 :arrLength =  strlen(:ArrayClassification)
+                 :ArrayClassification = mid(:ArrayClassification,0,:arrLength-1)
+             EndIf
+            :result_record_item = jsonAddItem(:result_record_item,"classification",S(:ArrayClassification))
+            :result_record_array = jsonAddArrayItem("",:result_record_item)
+         EndRepeat
+         Exit :result_record_array
+    Else
+        :result_record_item = jsonAddItem(:result_record_item, "name", S("所有模块"))
+        :result_record_item = jsonAddItem(:result_record_item, "url", S(""))
+        :result_record_item = jsonAddItem(:result_record_item,"sort",S(""))
+        :sql_getClassification = "select classification from cardiac_classification "
+        :resultCFRecord = changeRecordSet(:sql_getClassification)
+        :ArrayClassification =""
+        Repeat
+          :ArrayClassification +=classification+","
+        EndRepeat
+        :arrLength =  strlen(:ArrayClassification)
+        :ArrayClassification = mid(:ArrayClassification,0,:arrLength-1)
+        :result_record_item = jsonAddItem(:result_record_item,"classification",S(:ArrayClassification))
+        :result_record_array = jsonAddArrayItem("",:result_record_item)
+        Exit :result_record_array
+    EndIf
+%>

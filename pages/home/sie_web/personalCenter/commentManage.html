@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>评论管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="fly,layui,前端社区">
+    <meta name="description" content="Fly社区是模块化前端UI框架Layui的官网社区，致力于为web开发提供强劲动力">
+    <link rel="stylesheet" href="../css/layui/css/layui.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <script src="https://cdn.bootcss.com/jquery/3.4.0/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../css/layui/jquery.ztree.core.js"></script>
+    <link rel="stylesheet" href="../css/bootstrapStyle/bootstrapStyle.css">
+
+    <link rel="stylesheet" type="text/css" href="../css/index.css" />
+    <link rel="stylesheet" type="text/css" href="../css/comm.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+
+    <link rel="stylesheet" type="text/css" href="../css/article.css" />
+
+    <!--文本编辑器js-->
+    <script type="text/javascript" charset="utf-8" src="../js/wangEditor/wangEditor.js"></script>
+    <!--jQuery以及zoolina-->
+    <script src="../js/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+    <!--<script type="text/javascript" src="/Scripts/uploadfile.js"></script>-->
+    <!--<script type="text/javascript" src="../js/uploadFile.js"></script>-->
+    <!--<script type="text/javascript" src="/Scripts/StationJSLib-bak.js"></script>-->
+    <script type="text/javascript" src="/Scripts/StationJSLib-kindeditor.js"></script>
+</head>
+<body style="margin: 0;">
+<script>
+    //定义多个文本编辑器
+    var E = window.wangEditor;
+    var reviewResult = new E('#reviewResult');//审核结果
+
+    // 重载列表
+    function reloadTable() {
+        layui.use('table', function() {
+            var table = layui.table;
+            table.reload('test', {
+                url: '/home/sie_web/cultureManage/listCultureComment.template',
+                where: {
+                    status: '',
+                    userName: sessionStorage.getItem('name'),
+                    classification: sessionStorage.getItem('classification'),
+                },
+                page: {
+                    curr: 1, //重新从第 1 页开始
+                },
+            });
+        });
+    }
+
+    $(function() {
+        let userName = sessionStorage.getItem("loginName");
+        let userToken = sessionStorage.getItem("userToken");
+        let userId = sessionStorage.getItem("userId");
+        console.log(userToken == null);
+        let classification = sessionStorage.getItem("classification");
+
+        let objCheckLogin = new Array();
+        var checkLoginResult = function() {
+            console.log(objCheckLogin);
+            console.log("用户状态："+objCheckLogin[0]);
+            if (objCheckLogin[0] == 'bad' || objCheckLogin[0] == 'failed' || userName == null || userToken == null || userName == ' ' || userToken == ' ') {
+                sessionStorage.setItem('userId', ' ');
+                sessionStorage.setItem('userToken', ' ');
+                sessionStorage.setItem('classification', ' ');
+                sessionStorage.setItem('loginName', ' ');
+                var hrefPage = '/pages/home/sie_web/personalCenter/commentManage.html';
+                console.log(hrefPage);
+                sessionStorage.setItem('hrefPage', hrefPage);
+                $('.rigster a').text('注册');
+                $('.login a').text('登录');
+                $('.login a').attr('href', 'login.html');
+            }else{
+                var name = sessionStorage.getItem("name");
+                console.log(name);
+                // 登录状态有效
+                if (userToken != null) {
+                    $('.rigster a').text('退出');
+                    $('.rigster a').attr('href', '/pages/home/sie_web/index.html');
+                    $('.rigster a').click(function() {
+                        sessionStorage.setItem('userId', ' ');
+                        sessionStorage.setItem('userToken', ' ');
+                        sessionStorage.setItem('classification', ' ');
+                        sessionStorage.setItem('loginName', ' ');
+                        sessionStorage.setItem('id', '');
+                        sessionStorage.setItem('name', '');
+                        var hrefPage = '/pages/home/sie_web/personalCenter/commentManage.html';
+                        console.log(hrefPage);
+                        sessionStorage.setItem('hrefPage', hrefPage);
+                    });
+                    $('.login a').attr('href', '/pages/home/sie_web/personalCenter/home.html');
+                    $('.login a').text(name);
+                }
+            }
+        };
+        getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+        // 加载左边菜单栏
+        var obj_leftMenu = new Array();
+        var processResult_leftMenu = function() {
+            $("#left_menu").html(obj_leftMenu[0]);
+            $("#commentManage").attr("class","layui-nav-item layui-this");
+        };
+        getFromWS("home/sie_web/menu/getUserLeftMenu.template","classification="+classification,obj_leftMenu,processResult_leftMenu);
+
+        // 审核文章，不允许编辑且隐藏工具栏
+        content.create();
+        reviewResult.create();
+    });
+
+</script>
+
+<div class="main_container">
+    <div class="layui-container fly-marginTop fly-user-main">
+        <div class="site-tree-mobile layui-hide">
+            <i class="layui-icon">&#xe602;</i>
+        </div>
+        <div class="site-mobile-shade"></div>
+
+        <div class="site-tree-mobile layui-hide">
+            <i class="layui-icon">&#xe602;</i>
+        </div>
+        <div class="site-mobile-shade"></div>
+
+
+        <div class="fly-panel" pad20 style="margin-left: -100px">
+            <table class="layui-hide" id="test" lay-filter="test"></table>
+
+            <script type="text/html" id="toolbarDemo">
+                <div class="layui-btn-container">
+                    <button class="layui-btn layui-btn-sm" lay-event="all">查看所有评论</button>
+                    <button class="layui-btn layui-btn-sm" style="background-color: green" lay-event="statusYes">查看所有已发布评论</button>
+                    <button class="layui-btn layui-btn-sm" style="background-color: red" lay-event="statusNo">查看所有审核未通过的评论</button>
+                    <button class="layui-btn layui-btn-sm" style="background-color: orange" lay-event="statusUnknown">查看所有未审核的评论</button>
+                </div>
+            </script>
+
+            <script src="../css/layui/layui.js"></script>
+
+            <script>
+                layui.use('table', function() {
+                    var table = layui.table;
+                    table.render({
+                        elem: '#test',
+                        url: '/home/sie_web/cultureManage/listCultureComment.template',
+                        where:{
+                            status: '',
+                            userName:sessionStorage.getItem("name"),
+                            classification:sessionStorage.getItem("classification")
+                        },
+                        toolbar: '#toolbarDemo',
+                        cols: [
+                            [
+                                {type: 'checkbox', fixed: 'left'},
+                                {field: 'id', title: '评论ID', sort: true},
+                                {field: 'content', title: '内容'},
+                                {field: 'status', title: '状态', width: 100, sort: true,templet: '#articleStatus'},
+                                {field: 'publicTime', title: '发布时间', sort: true, width: 170},
+                                {fixed: 'right', title: '操作',width:170,templet:'#tool'}
+                            ]
+                        ],
+                        page: true
+                    });
+
+                    //头工具栏事件
+                    table.on('toolbar(test)', function(obj) {
+                        switch (obj.event) {
+                            case 'all':
+                                reloadTable();
+                                break;
+                            case 'statusYes':
+                                layui.use('table', function() {
+                                    var table = layui.table;
+                                    table.reload('test', {
+                                        url: '/home/sie_web/cultureManage/listCultureComment.template',
+                                        where: {
+                                            status: '1',
+                                            userName: sessionStorage.getItem('name'),
+                                            classification: sessionStorage.getItem('classification'),
+                                        },
+                                        page: {
+                                            curr: 1, //重新从第 1 页开始
+                                        },
+                                    });
+                                });
+                                break;
+                            case 'statusNo':
+                                layui.use('table', function() {
+                                    var table = layui.table;
+                                    table.reload('test', {
+                                        url: '/home/sie_web/cultureManage/listCultureComment.template',
+                                        where: {
+                                            status: '-1',
+                                            userName: sessionStorage.getItem('name'),
+                                            classification: sessionStorage.getItem('classification'),
+                                        },
+                                        page: {
+                                            curr: 1, //重新从第 1 页开始
+                                        },
+                                    });
+                                });
+                                break;
+                            case 'statusUnknown':
+                                layui.use('table', function() {
+                                    var table = layui.table;
+                                    table.reload('test', {
+                                        url: '/home/sie_web/cultureManage/listCultureComment.template',
+                                        where: {
+                                            status: '0',
+                                            userName: sessionStorage.getItem('name'),
+                                            classification: sessionStorage.getItem('classification'),
+                                        },
+                                        page: {
+                                            curr: 1, //重新从第 1 页开始
+                                        },
+                                    });
+                                });
+                                break;
+                        }
+                    });
+
+                    //监听行工具事件
+                    table.on('tool(test)', function(obj){
+                        var data = obj.data;
+                        if(obj.event === 'del'){
+                            console.log(data.reason);
+                            layer.confirm('真的要删除这篇文章吗？', {
+                                btn: ['还是算了','残忍删除'] //按钮
+                            }, function(){
+                                layer.msg('真好', {icon: 6});
+                            }, function(){
+                                obj.del();
+                                layer.msg('已经删除了哦', function(index) {
+                                    var commentId = data.id;
+                                    var deleteComment = "commentId="+commentId;
+                                    var obj_deleteComment = new Array();
+                                    var processResult_deleteComment = function() {
+                                        layer.msg("删除成功", {icon: 6},function() {
+                                            layer.closeAll();
+                                        });
+                                        reloadTable();
+                                    };
+                                    getFromWS("home/sie_web/cultureManage/deleteCultureComment.template",deleteComment,obj_deleteComment,processResult_deleteComment);
+                                });
+                            });
+                        }else if(obj.event === 'review'){
+                            sessionStorage.setItem("commentId",data.id);
+                            if (data.status == '1') {
+                                layer.msg("该评论已经审核过了",function() {});
+                                return false;
+                            }else if (data.status == '0') {
+                                $("#statusUnknown").attr("style","display:block");
+                                $("#statusNo").attr("style","display:none");
+                            }else if (data.status == '-1') {
+                                $("#statusUnknown").attr("style","display:none");
+                                $("#statusNo").attr("style","display:block");
+                            }
+                            layer.open({
+                                type: 1,
+                                area:['51%','20%'],
+                                title: '评论审核  （评论ID为：'+data.id+'）',
+                                content: $('#reviewComment')
+                            })
+                        }
+                    });
+                });
+            </script>
+
+            <script type="text/html" id="articleType">
+                {{# if(d.articleType == 1){ }}
+                <div>{{ "教学活动" }}</div>
+                {{# }else if(d.articleType == 2){ }}
+                <div>{{ "政策公告" }}</div>
+                {{# }else if(d.articleType == 3){ }}
+                <div>{{ "文化交流" }}</div>
+                {{# }else if(d.articleType == 4){ }}
+                <div>{{ "其他新闻" }}</div>
+                {{# } }}
+            </script>
+            <script type="text/html" id="articleStatus">
+                {{# if(d.status == -1){ }}
+                <div class="statusNoPass" style="color: red;" title="点击查看原因" onclick="showReason('{{d.reason}}')">{{ "审核未通过" }}</div>
+                {{# }else if(d.status == 0){ }}
+                <div style="color: orange;">{{ "待审核" }}</div>
+                {{# }else if(d.status == 1){ }}
+                <div style="color: green;">{{ "已发布" }}</div>
+                {{# } }}
+            </script>
+            <script>
+                function showReason(reason) {
+                    layer.alert(reason);
+                }
+            </script>
+            <script type="text/html" id="tool">
+                {{# if(sessionStorage.getItem('classification') == 1){ }}
+                <a class="layui-btn layui-btn-xs" lay-event="review">审核</a>
+                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                {{# }else{ }}
+                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                {{# } }}
+            </script>
+        </div>
+    </div>
+</div>
+
+<div class="copyright">
+    <div class="footer">
+        <div class="technical-support">
+            武汉大学国家网络安全学院技术支持
+        </div>
+        <div class="organizer">
+            主办单位：汉语国际推广教学资源研究与开发基地 武汉大学国际教育学院
+        </div>
+        <div class="technical-support">
+            2019@ 技术支持：027-68777156 SHENJIAQIANG@WHU.EDU.CN
+        </div>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+</body>
+
+<!--审核评论-->
+<div class="newArticle" id="reviewComment" style="display: none">
+    <div class="articleHeader">
+        <div class="textArea">
+            <div style="display: flex;flex-direction: row">
+                <div class="articleTitle" id="status">审核状态：</div>
+                <div class="statusUnknown" id="statusUnknown" style="display:none">待审核</div>
+                <div class="statusNo" id="statusNo" style="display:none">审核未通过</div>
+            </div>
+        </div>
+    </div>
+    <div class="button-box">
+        <div class="block"></div>
+        <button class="submit" id="reviewCommentYes">通过</button>
+        <button class="submit" style="background: #FF5722" id="reviewCommentNo">不通过</button>
+        <button class="return" onclick="layer.closeAll()">返回</button>
+    </div>
+</div>
+
+<!--提交审核结果-->
+<script>
+    $("#reviewCommentYes").click(function() {
+            console.log('审核通过');
+            var status = '1';
+            var commentId = sessionStorage.getItem("commentId");
+            var review = 'status=' + status + "$^@^$commentId="+commentId;
+            console.log(review);
+            var obj_reviewComment = new Array();
+            var processResult_reviewComment = function() {
+                layer.msg("审核通过", {icon: 6},function() {
+                    layer.closeAll();
+                });
+                reloadTable();
+            };
+            getFromWS("home/sie_web/cultureManage/reviewCultureComment.template",review,obj_reviewComment,processResult_reviewComment);
+        }
+    );
+    $("#reviewCommentNo").click(function() {
+            console.log("审核未通过");
+            var status = "-1";
+            var commentId = sessionStorage.getItem("commentId");
+            var review = 'status=' + status + "$^@^$commentId="+commentId;
+            console.log(review);
+            var obj_reviewComment = new Array();
+            var processResult_reviewComment = function() {
+                layer.msg("审核未通过", {icon: 5},function() {
+                    layer.closeAll();
+                });
+                reloadTable();
+            };
+            getFromWS("home/sie_web/cultureManage/reviewCultureComment.template",review,obj_reviewComment,processResult_reviewComment);
+        }
+    );
+</script>

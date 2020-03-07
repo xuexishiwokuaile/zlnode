@@ -1,0 +1,247 @@
+/*
+*主页样式
+*原有的样式部分修改：去除、修改
+*陈家强
+*20190405
+*/
+
+body {
+	font-family: 'HYSongYunLangHeiW' !important;
+}
+
+.header-top {
+	height: 48px;
+}
+
+.header-outer {
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	height: 48px;
+	margin-left: 10px !important;
+	margin-right: 20px !important;
+}
+
+.header-top-left {
+	display: flex;
+	align-items: center;
+	color: #FFFFFF;
+	float: left;
+}
+
+.header-logo {
+	padding-right: 8px;
+}
+
+.header-logo img {
+	width: 40px;
+	height: 40px;
+}
+
+.language {
+	padding: 0 16px;
+	font-size: 12px;
+}
+.header-top-right{
+	height: 48px;
+	display: flex;
+	align-items: center;
+}
+
+.header-email-tel {
+	padding-left: 32px !important;
+	font-size: 12px !important;
+}
+
+.header-iron {
+	padding-left: 22px !important;
+}
+
+.login-rigster{
+	display: flex;
+	justify-content: space-between;
+	font-size: 12px;
+	color: #FFFFFF;
+	width: 60px;
+	margin-left: 40px;
+}
+
+
+
+/* 导航栏 */
+.header-title {
+	color: #232a34 !important;
+	font-size: 20px !important;
+	font-family: 'HYSongYunLangHeiW' !important;
+}
+
+.navbar-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	/* margin-top: .7em; */
+	width: 1200px;
+}
+
+/* banner */
+
+.top h5 {
+	font-size: 16px !important;
+}
+
+.top h6 {
+	font-size: 12px !important;
+	letter-spacing: 1px;
+}
+
+.bannergrid1 {
+	padding-left: 36px;
+	cursor: pointer;
+}
+
+.clearfix {}
+
+.bannergrid1 h4 {
+	font-size: 16px !important;
+	padding-left: 18px;
+	letter-spacing: 2px;
+	line-height: 26px;
+}
+
+.bannergrid1 p {
+	font-size: 12px !important;
+	text-align: center;
+	padding-top: 4px !important;
+	margin-top: 0 !important;
+	letter-spacing: 1.5px;
+}
+
+.bannergrid1-english {
+	margin-top: 6px;
+}
+
+.welcome p {
+	font-size: 14px;
+	color: #000205 !important;
+	letter-spacing: 1px;
+	width: 640px;
+	line-height: 42px;
+}
+
+.book p {
+	font-size: 12px !important;
+	color: #e2e0e2 !important;
+}
+
+/* 学术交流 */
+.education-title a {
+	padding: .4em 1.4em;
+	letter-spacing: 1px;
+	color: #FFFFFF;
+	font-size: 16px;
+	background: #8e43e7;
+	text-decoration: none;
+	text-align: center;
+	letter-spacing: 2px;
+}
+
+.education-title {
+	/* margin-top: 3em; */
+	text-align: center;
+}
+.heading{
+	color: #8e43e7!important;
+	margin-top: 38px;
+	font-size: 30px!important;
+}
+
+.left1 h3{
+	font-size: 16px!important;
+}
+.left1 p{
+	color: #ced0d3!important;
+}
+.right1 h3{
+	font-weight: 600;
+}
+.right1 p{
+	color: #ced0d3!important;
+}
+.education-more a {
+	padding: .4em 1.4em;
+	letter-spacing: 1px;
+	color: #FFFFFF;
+	font-size: 16px;
+	background: #8e43e7;
+	text-decoration: none;
+	text-align: center;
+	letter-spacing: 2px;
+}
+
+.education-more {
+	margin-top: 3em;
+	text-align: center;
+}
+
+/* 留学生 */
+.education-clients a {
+	padding: .4em 1.4em;
+	letter-spacing: 1px;
+	color: #FFFFFF;
+	font-size: 16px;
+	background: #ffc168;
+	text-decoration: none;
+	text-align: center;
+	letter-spacing: 2px;
+}
+
+.education-clients {
+	/* margin-top: 3em; */
+	text-align: center;
+}
+
+.clients > .heading{
+	color: #ffc168!important;
+}
+
+.client-grids p{
+	color: #ced0d3!important;
+	font-size: 12px!important;
+}
+
+/* 友情链接 */
+.links{
+	background: #232a34!important;
+}
+.links-outer{
+	display: flex;
+	flex-direction: column;
+}
+.links-items{
+	display: flex;
+	justify-content: center;
+	padding: 10px 0;
+}
+.links-item{
+	width: 220px;
+	text-align: center;
+	font-size: 14px;
+	border: 1px solid #FFFFFF;
+	padding: 2px 0px;
+	margin-right: 20px;
+	cursor: pointer;
+}
+.links-item a{
+	color: #FFFFFF!important ;
+}
+
+/* footer */
+.footer{
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+}
+.technical-support{
+	margin: 0 20px;
+}

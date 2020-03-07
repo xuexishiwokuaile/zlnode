@@ -1,0 +1,27 @@
+<%
+    /// 文 件 名：addStudent
+    /// 描    述：新增学生
+    /// 项目名称：sie_web
+    /// 作    者：
+    /// 发布日期：
+    /// 文件版本：V1.0
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved.
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+    debugMsg("[DEBUGMSG]:addUser.template 位置:13:"+"传入的值有：login_name="+:name+"--passwd="+:passwd+"--name="+:name+"--classification="+:classification)
+    ///检查新增的用户名是否重复
+    :sql_checkRepeat = "SELECT id FROM st_passports WHERE name = ?"
+    :result_checkRepeat = changeRecordSet(:sql_checkRepeat,S(:name))
+
+    ///没有重复
+    If :result_checkRepeat == "bad"
+        :id = tuid()
+        :sql_addStudent = "INSERT INTO st_passports VALUES(?,?,md5(?),?,?,?,?,?,?)"
+        :result_addStudent = execSQL(:sql_addStudent,S(:id),S(:name),S(:password),S(:classification),S("1"),S(:name),S(:phoneNumber),S(:email),S(:gender))
+        =:result_addStudent
+    Else
+        =:"bad"
+    EndIf
+%>

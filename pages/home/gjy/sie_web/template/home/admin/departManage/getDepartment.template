@@ -1,0 +1,32 @@
+
+<%
+    /// 文 件 名：getDepartment
+    /// 描    述：获取机构的信息，传给前端json，构建机构树(用一句话描述该文件做什么)  
+    /// 项目名称：sie_web      
+    /// 作    者：武汉大学国家网络安全学院@沈家强    
+    /// 发布日期：2019/5/23 16:07  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+  debugMsg("[DEBUGMSG]:getDepartment.template 位置:13:"+"==获取机构信息==")
+  :sql_depart="SELECT * FROM st_depart_map ORDER BY sort ASC"
+  :resultRecord = changeRecordSet(:sql_depart)
+  :recordNum = recordCount()
+  :result_records_array=""
+  If :resultRecord=="ok"
+      Repeat
+        :result_record_item=jsonAddItem("", "pId", S(pid))
+        :result_record_item=jsonAddItem(:result_record_item, "name", S(depart_name))
+        :result_record_item=jsonAddItem(:result_record_item, "id", S(id))
+        :result_record_item=jsonAddItem(:result_record_item, "sort", S(sort))
+        :result_records_array = jsonAddArrayItem(:result_records_array, :result_record_item)
+      EndRepeat
+///      :result_records_items = jsonAddItem("", "data", :result_records_array)
+      =:result_records_array
+  Else
+      =:resultRecord
+  EndIf
+%>

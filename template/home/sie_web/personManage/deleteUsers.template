@@ -1,0 +1,34 @@
+<%
+    /// 文 件 名：deleteUser
+    /// 描    述：删除用户
+    /// 项目名称：sie_web
+    /// 作    者：
+    /// 发布日期：
+    /// 文件版本：V1.0
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved.
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+
+<%
+    debugMsg("--------")
+    debugMsg(:ids)
+    split(:ids, ",", &arrayId)
+
+    /// 单个删除用户 可以不用传usersCount
+    If :usersCount == "__error__"
+        :usersCount = 1
+    EndIf
+
+    :sql_deleteUsers = "DELETE FROM st_passports WHERE id = ?"
+    :i = 0
+    While :i < :usersCount
+        :result_deleteUsers = execSQL(:sql_deleteUsers,S(:arrayId[:i])
+        :i = :i + 1
+    EndWhile
+    If :result_deleteUsers == "ok$^@^$UPDATED="
+        ="ok"
+    Else
+        =:result_deleteUsers
+    EndIf
+%>

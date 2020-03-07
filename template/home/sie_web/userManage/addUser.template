@@ -1,0 +1,38 @@
+<%
+    /// 文 件 名：addUser
+    /// 描    述：新增用户(用一句话描述该文件做什么)  
+    /// 项目名称：sie_web      
+    /// 作    者：武汉大学国家网络安全学院@沈家强    
+    /// 发布日期：2019/5/28 16:34  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+  debugMsg("[DEBUGMSG]:addUser.template 位置:13:"+"传入的值有：login_name="+:login_name+"--passwd="+:passwd+"--name="+:name+"--classification="+:classification)
+
+  :sql_checkRepeat = "SELECT * FROM st_passports WHERE login_name=?"
+  :resultRecord_checkRepeat = changeRecordSet(:sql_checkRepeat,S(:login_name))
+
+  If :resultRecord_checkRepeat != "ok"
+    :id = tuid()
+    If :classification == "4"
+       :name = :name + :id
+    EndIf
+       debugMsg(:name+"show_time")
+    :sql_add = "INSERT INTO st_passports VALUES (?,?,md5(?),?,?,?,?,?,?)"
+    :resultRecord_add = execSQL(:sql_add,S(:id),S(:login_name),S(:passwd),S(:classification),S(1),S(:name),S(:phonenumber),S(:email),S(:gender))
+    =:resultRecord_add
+
+    sshExec("127.0.0.1","root","isswhu2015","cd /home/postgres/app/filebrowser; systemctl stop filebrowser")
+    sshExec("127.0.0.1","root","isswhu2015","cd /home/postgres/app/filebrowser/container; mkdir "#:login_name)
+    sshExec("127.0.0.1","root","isswhu2015","cd /home/postgres/app/filebrowser; ./main users add "#:login_name#" "#:passwd#" --scope ./"#:login_name )
+    sshExec("127.0.0.1","root","isswhu2015","cd /home/postgres/app/filebrowser; systemctl start filebrowser")
+
+  Else
+    =:resultRecord_checkRepeat
+  EndIf
+
+
+%>

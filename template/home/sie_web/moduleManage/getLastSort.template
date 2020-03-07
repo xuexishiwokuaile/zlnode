@@ -1,0 +1,21 @@
+<%
+/// 查找最大sort值
+  :sql_find_sort = "select sort from module_manage where parent_id =? order by cast(sort as int) desc"
+  :resultRecord = changeRecordSet(:sql_find_sort,S(:id))
+  :recordItem ="";
+  debugMsg("[DEBUGMSG]:getLastSort.template 位置:6:"+":resultRecord")
+  If :resultRecord=="ok"
+    :i=0
+    Repeat
+      :ArraySort[:i] = sort
+    ///循环主体
+      :i++
+    EndRepeat
+    :recordItem = jsonAddItem("", "Code", S("1"))
+    :recordItem = jsonAddItem(:recordItem,"value",S(:ArraySort[0]))
+  Else
+    :recordItem = jsonAddItem("", "Code", S("0"))
+    :recordItem = jsonAddItem(:recordItem,"value",S("0"))
+  EndIf
+  Exit :recordItem
+%>

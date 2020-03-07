@@ -1,0 +1,22 @@
+<%
+    debugMsg("[DEBUGMSG]:getAllColumns.template 位置:77777777:"+"进入---------------")
+    	:sql = "select * from module_manage  "
+    	:resultRecord = changeRecordSet(:sql)
+    	:recordNum = recordCount()
+      :result_records_array=""
+      If :resultRecord=="ok"
+          :result_record_item=jsonAddItem("", "name", S("所有模块"))
+          :result_record_item=jsonAddItem(:result_record_item, "id", S("0"))
+          :result_record_item=jsonAddItem(:result_record_item, "pId", S("-1"))
+          :result_records_array = jsonAddArrayItem(:result_records_array, :result_record_item)
+          Repeat
+            :result_record_item=jsonAddItem("", "name", S(name))
+            :result_record_item=jsonAddItem(:result_record_item, "id", S(id))
+            :result_record_item=jsonAddItem(:result_record_item, "pId", S(parent_id))
+            :result_records_array = jsonAddArrayItem(:result_records_array, :result_record_item)
+          EndRepeat
+          Exit :result_records_array
+      Else
+          Exit :resultRecord
+      EndIf
+%>

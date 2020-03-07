@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>人员管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="fly,layui,前端社区">
+    <meta name="description" content="Fly社区是模块化前端UI框架Layui的官网社区，致力于为web开发提供强劲动力">
+    <link rel="stylesheet" href="../css/layui/css/layui.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <script src="https://cdn.bootcss.com/jquery/3.4.0/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../css/layui/jquery.ztree.core.js"></script>
+    <link rel="stylesheet" href="../css/bootstrapStyle/bootstrapStyle.css">
+
+    <link rel="stylesheet" type="text/css" href="../css/index.css" />
+    <link rel="stylesheet" type="text/css" href="../css/comm.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/admin-customize-style.css" />
+
+    <link rel="stylesheet" type="text/css" href="../css/article.css" />
+
+    <!--文本编辑器js-->
+    <script type="text/javascript" charset="utf-8" src="../js/wangEditor/wangEditor.js"></script>
+    <!--jQuery以及zoolina-->
+    <script src="../js/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+    <!--<script type="text/javascript" src="/Scripts/uploadfile.js"></script>-->
+    <!--<script type="text/javascript" src="../js/uploadFile.js"></script>-->
+    <!--<script type="text/javascript" src="/Scripts/StationJSLib-bak.js"></script>-->
+    <script type="text/javascript" src="/Scripts/StationJSLib-kindeditor.js"></script>
+</head>
+<body style="margin: 0;">
+<script>
+    //定义多个文本编辑器
+    var E = window.wangEditor;
+    var reviewResult = new E('#reviewResult');//审核结果
+
+    // 重载列表
+    function reloadTable() {
+        layui.use('table', function() {
+            var table = layui.table;
+            table.reload('test', {
+                url: '/home/sie_web/personManage/getUserList.template',
+                page: {
+                    curr: 1, //重新从第 1 页开始
+                },
+            });
+        });
+    }
+
+    $(function() {
+        let userName = sessionStorage.getItem("loginName");
+        let userToken = sessionStorage.getItem("userToken");
+        let userId = sessionStorage.getItem("userId");
+        console.log(userToken == null);
+        let classification = sessionStorage.getItem("classification");
+
+        let objCheckLogin = new Array();
+        var checkLoginResult = function() {
+            console.log(objCheckLogin);
+            console.log("用户状态："+objCheckLogin[0]);
+            if (objCheckLogin[0] == 'bad' || objCheckLogin[0] == 'failed' || userName == null || userToken == null || userName == ' ' || userToken == ' ') {
+                sessionStorage.setItem('userId', ' ');
+                sessionStorage.setItem('userToken', ' ');
+                sessionStorage.setItem('classification', ' ');
+                sessionStorage.setItem('loginName', ' ');
+                var hrefPage = '/pages/home/sie_web/personalCenter/personManage.html';
+                console.log(hrefPage);
+                sessionStorage.setItem('hrefPage', hrefPage);
+                $('.rigster a').text('注册');
+                $('.login a').text('登录');
+                $('.login a').attr('href', 'login.html');
+            }else{
+                var name = sessionStorage.getItem("name");
+                console.log(name);
+                // 登录状态有效
+                if (userToken != null) {
+                    $('.rigster a').text('退出');
+                    $('.rigster a').attr('href', '/pages/home/sie_web/index.html');
+                    $('.rigster a').click(function() {
+                        sessionStorage.setItem('userId', ' ');
+                        sessionStorage.setItem('userToken', ' ');
+                        sessionStorage.setItem('classification', ' ');
+                        sessionStorage.setItem('loginName', ' ');
+                        sessionStorage.setItem('id', '');
+                        sessionStorage.setItem('name', '');
+                        var hrefPage = '/pages/home/sie_web/personalCenter/personManage.html';
+                        console.log(hrefPage);
+                        sessionStorage.setItem('hrefPage', hrefPage);
+                    });
+                    $('.login a').attr('href', '/pages/home/sie_web/personalCenter/home.html');
+                    $('.login a').text(name);
+                }
+            }
+        };
+        getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+        // 审核文章，不允许编辑且隐藏工具栏
+        content.create();
+        reviewResult.create();
+    });
+</script>
+
+<div class="main_container">
+    <div class="layui-container fly-marginTop fly-user-main">
+        <div class="site-tree-mobile layui-hide">
+            <i class="layui-icon">&#xe602;</i>
+        </div>
+        <div class="site-mobile-shade"></div>
+
+        <div class="site-tree-mobile layui-hide">
+            <i class="layui-icon">&#xe602;</i>
+        </div>
+        <div class="site-mobile-shade"></div>
+
+
+        <div class="fly-panel" pad20 style="margin-left: -100px">
+            <table class="layui-hide" id="test" lay-filter="test"></table>
+
+            <script type="text/html" id="toolbarDemo">
+                <div class="layui-btn-container">
+                    <button class="layui-btn layui-btn-sm" style="background-color: blue" lay-event="addAdmin">新增管理员</button>
+                    <button class="layui-btn layui-btn-sm" style="background-color: green" lay-event="addTeacher">新增教师</button>
+                    <button class="layui-btn layui-btn-sm" style="background-color: orange" lay-event="addStudent">新增学生</button>
+                    <button class="layui-btn layui-btn-sm" style="background-color: red" lay-event="batchDelete">批量删除</button>
+                </div>
+            </script>
+
+            <script src="../css/layui/layui.js"></script>
+
+            <script>
+                layui.use('table', function() {
+                    var table = layui.table;
+                    table.render({
+                        elem: '#test',
+                        url: '/home/sie_web/personManage/getUserList.template',
+                        toolbar: '#toolbarDemo',
+                        cols: [
+                            [
+                                {type: 'checkbox', fixed: 'left'},
+                                {field: 'id', title: '用户ID', sort: true},
+                                {field: 'name', title: '用户名'},
+                                {field: 'type', title: '用户类别'},
+                                {field: 'phoneNumber', title: '电话号码'},
+                                {field: 'email', title: '邮箱'},
+                                {field: 'gender', title: '性别'},
+                                {fixed: 'right', title: '操作',templet:'#tool'}
+                            ]
+                        ],
+                        page: true
+                    });
+
+                    //头工具栏事件
+                    table.on('toolbar(test)', function(obj) {
+                        switch (obj.event) {
+                            //新增管理员
+                            case 'addAdmin':
+                                layer.open({
+                                    type: 1,
+                                    area: ['360px', '330px'],
+                                    shadeClose: true, //点击遮罩关闭
+                                    //顶部标题
+                                    title: '新增管理员',
+                                    content: $('#add-admin'),
+                                    end:function() {
+                                        //当弹窗关闭时，清除掉信息
+                                        $('#add-admin input[ name=\'login_name\' ] ').val("");
+                                        $('#add-admin input[ name=\'name\' ] ').val("");
+                                        $('#add-admin input[ name=\'pwd1\' ] ').val("");
+                                        $('#add-admin input[ name=\'pwd2\' ] ').val("");
+                                        $('#add-admin input[ name=\'id\' ] ').val("");
+                                        $('#add-admin input[ name=\'email\' ] ').val("");
+                                        $('#add-admin input[ name=\'phoneNumber\' ] ').val("");
+                                        $('#add-admin input[ name=\'gender\' ] ').val("");
+                                    }
+                                });
+                                break;
+                            case 'addTeacher':
+                                //新增教师
+                                layer.open({
+                                    type: 1,
+                                    area: ['360px', '330px'],
+                                    shadeClose: true, //点击遮罩关闭
+                                    //顶部标题
+                                    title: '新增教师',
+                                    content: $('#add-teacher'),
+                                    end:function() {
+                                        //当弹窗关闭时，清除掉信息
+                                        $('#add-teacher input[ name=\'login_name\' ] ').val("");
+                                        $('#add-teacher input[ name=\'name\' ] ').val("");
+                                        $('#add-teacher input[ name=\'pwd1\' ] ').val("");
+                                        $('#add-teacher input[ name=\'pwd2\' ] ').val("");
+                                        $('#add-teacher input[ name=\'id\' ] ').val("");
+                                        $('#add-teacher input[ name=\'email\' ] ').val("");
+                                        $('#add-teacher input[ name=\'phoneNumber\' ] ').val("");
+                                        $('#add-teacher input[ name=\'gender\' ] ').val("");
+                                    }
+                                });
+                                break;
+                            case 'addStudent':
+                                //新增学生
+                                layer.open({
+                                    type: 1,
+                                    area: ['360px', '330px'],
+                                    shadeClose: true, //点击遮罩关闭
+                                    //顶部标题
+                                    title: '新增学生',
+                                    content: $('#add-student'),
+                                    end:function() {
+                                        //当弹窗关闭时，清除掉信息
+                                        $('#add-student input[ name=\'login_name\' ] ').val("");
+                                        $('#add-student input[ name=\'name\' ] ').val("");
+                                        $('#add-student input[ name=\'pwd1\' ] ').val("");
+                                        $('#add-student input[ name=\'pwd2\' ] ').val("");
+                                        $('#add-student input[ name=\'id\' ] ').val("");
+                                        $('#add-student input[ name=\'email\' ] ').val("");
+                                        $('#add-student input[ name=\'phoneNumber\' ] ').val("");
+                                        $('#add-student input[ name=\'gender\' ] ').val("");
+                                    }
+                                });
+                                break;
+                            case 'batchDelete':
+                                //批量删除
+                                var checkStatus = table.checkStatus("test");
+                                var data = checkStatus.data;
+                                if(data == '')
+                                {
+                                    //没有选中用户
+                                    layer.msg('请选择要删除的用户', function() {
+                                        //关闭后的操作
+                                    });
+                                }
+                                else
+                                {
+                                    layer.confirm('确定批量删除这些用户？', function(index) {
+                                        let userIds = '';
+                                        let usersCount = 0;
+                                        for (var i = 0; i < data.length; i++) {
+                                            userIds = userIds + data[i].id + ',';
+                                            usersCount++;
+                                        }
+                                        //去掉最后一个 ，
+                                        userIds = userIds.substr(0, userIds.length - 1);
+                                        let obj = new Array();
+                                        let Result = function() {
+                                            if (obj[0] == "ok") {
+                                                layer.close(layer.index);
+                                                reloadTable();
+                                            } else {
+                                                layer.msg(`删除失败，${obj[0]}`, function() {
+                                                    //关闭后的操作
+                                                });
+                                            }
+                                        };
+                                        getFromWS('/home/sie_web/personManage/deleteUsers.template',
+                                            'ids=' + userIds + '$^@^$usersCount=' + usersCount, obj, Result);
+                                    });
+                                }
+                                break;
+                        }
+                    });
+
+                    //监听行工具事件
+                    table.on('tool(test)', function(obj){
+                        var data = obj.data;
+                        if(obj.event === 'edit'){
+                            //验证用户身份
+                            if(data.type == "admin")
+                            {
+                                let obj = new Array();
+                                let Result = function() {
+                                    if (obj[0] != 'bad') {
+                                        let userInfo = JSON.parse(obj[0]);
+                                        //更新弹出层的表单
+                                        $('#add-admin input[ name=\'login_name\' ] ').val(userInfo[0].name);
+                                        $('#add-admin input[ name=\'phoneNumber\' ] ').val(userInfo[0].phoneNumber);
+                                        $('#add-admin input[ name=\'email\' ] ').val(userInfo[0].email);
+                                        $('#add-admin input[ name=\'gender\' ] ').val(userInfo[0].gender);
+                                        $('#add-admin input[ name=\'pwd1\' ] ').val(userInfo[0].password);
+                                        $('#add-admin input[ name=\'pwd2\' ] ').val(userInfo[0].password);
+                                        $('#add-admin input[ name=\'id\' ] ').val(userInfo[0].id);
+                                    }
+                                };
+                                getFromWS('/home/sie_web/personManage/getUserInfo.template', 'id=' + data.id + "$^@^$classification=" + data.classification, obj, Result);
+                                layer.open({
+                                    type: 1,
+                                    area: ['360px', '330px'],
+                                    shadeClose: true, //点击遮罩关闭
+                                    title: '编辑管理员',
+                                    content: $('#add-admin'),
+                                    end:function() {
+                                        //当弹窗关闭时，清除掉信息
+                                        $('#add-admin input[ name=\'login_name\' ] ').val("");
+                                        $('#add-admin input[ name=\'pwd1\' ] ').val("");
+                                        $('#add-admin input[ name=\'pwd2\' ] ').val("");
+                                        $('#add-admin input[ name=\'id\' ] ').val("");
+                                        $('#add-admin input[ name=\'email\' ] ').val("");
+                                        $('#add-admin input[ name=\'phoneNumber\' ] ').val("");
+                                        $('#add-admin input[ name=\'gender\' ] ').val("");
+                                    }
+                                });
+                            }
+                            else if(data.type == "teacher")
+                            {
+                                let obj = new Array();
+                                let Result = function() {
+                                    if (obj[0] != 'bad') {
+                                        let userInfo = JSON.parse(obj[0]);
+                                        //更新弹出层的表单
+                                        $('#add-teacher input[ name=\'login_name\' ] ').val(userInfo[0].name);
+                                        $('#add-teacher input[ name=\'phoneNumber\' ] ').val(userInfo[0].phoneNumber);
+                                        $('#add-teacher input[ name=\'email\' ] ').val(userInfo[0].email);
+                                        $('#add-teacher input[ name=\'gender\' ] ').val(userInfo[0].gender);
+                                        $('#add-teacher input[ name=\'pwd1\' ] ').val(userInfo[0].password);
+                                        $('#add-teacher input[ name=\'pwd2\' ] ').val(userInfo[0].password);
+                                        $('#add-teacher input[ name=\'id\' ] ').val(userInfo[0].id);
+                                    }
+                                };
+                                getFromWS('/home/sie_web/personManage/getUserInfo.template', 'id=' + data.id + "$^@^$classification=" + data.classification, obj, Result);
+                                layer.open({
+                                    type: 1,
+                                    area: ['360px', '330px'],
+                                    shadeClose: true, //点击遮罩关闭
+                                    title: '编辑教师',
+                                    content: $('#add-teacher'),
+                                    end:function() {
+                                        //当弹窗关闭时，清除掉信息
+                                        $('#add-teacher input[ name=\'login_name\' ] ').val("");
+                                        $('#add-teacher input[ name=\'pwd1\' ] ').val("");
+                                        $('#add-teacher input[ name=\'pwd2\' ] ').val("");
+                                        $('#add-teacher input[ name=\'id\' ] ').val("");
+                                        $('#add-teacher input[ name=\'email\' ] ').val("");
+                                        $('#add-teacher input[ name=\'phoneNumber\' ] ').val("");
+                                        $('#add-teacher input[ name=\'gender\' ] ').val("");
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                let obj = new Array();
+                                let Result = function() {
+                                    if (obj[0] != 'bad') {
+                                        let userInfo = JSON.parse(obj[0]);
+                                        //更新弹出层的表单
+                                        $('#add-student input[ name=\'login_name\' ] ').val(userInfo[0].name);
+                                        $('#add-student input[ name=\'phoneNumber\' ] ').val(userInfo[0].phoneNumber);
+                                        $('#add-student input[ name=\'email\' ] ').val(userInfo[0].email);
+                                        $('#add-student input[ name=\'gender\' ] ').val(userInfo[0].gender);
+                                        $('#add-student input[ name=\'pwd1\' ] ').val(userInfo[0].password);
+                                        $('#add-student input[ name=\'pwd2\' ] ').val(userInfo[0].password);
+                                        $('#add-student input[ name=\'id\' ] ').val(userInfo[0].id);
+                                    }
+                                };
+                                getFromWS('/home/sie_web/personManage/getUserInfo.template', 'id=' + data.id + "$^@^$classification=" + data.classification, obj, Result);
+                                layer.open({
+                                    type: 1,
+                                    area: ['360px', '330px'],
+                                    shadeClose: true, //点击遮罩关闭
+                                    title: '编辑学生',
+                                    content: $('#add-student'),
+                                    end:function() {
+                                        //当弹窗关闭时，清除掉信息
+                                        $('#add-studnet input[ name=\'login_name\' ] ').val("");
+                                        $('#add-student input[ name=\'pwd1\' ] ').val("");
+                                        $('#add-student input[ name=\'pwd2\' ] ').val("");
+                                        $('#add-student input[ name=\'id\' ] ').val("");
+                                        $('#add-student input[ name=\'email\' ] ').val("");
+                                        $('#add-student input[ name=\'phoneNumber\' ] ').val("");
+                                        $('#add-student input[ name=\'gender\' ] ').val("");
+                                    }
+                                });
+                            }
+                        }
+                    });
+                });
+
+                layui.use(['jquery', 'form'], function() {
+                    var form = layui.form;
+                    //新增管理员
+                    form.on('submit(addAdmin)', function(data) {
+                        let pwd1 = data.field.pwd1;
+                        let pwd2 = data.field.pwd2;
+                        if(pwd1 == pwd2)
+                        {
+                            //判断是新增还是修改
+                            let haveId = $('#add-admin input[ name=\'id\' ] ').val();
+
+                            if(haveId == '')
+                            {
+                                //新增
+                                let obj = new Array();
+                                let Result = function () {
+                                    if (obj[0] == 'ok'){
+                                        //新增成功
+                                        reloadTable();
+                                        //关闭弹出层
+                                        layer.close(layer.index);
+                                    }else{
+                                        layer.msg(`失败`, function() {
+                                            //关闭后的操作
+                                        });
+                                    }
+                                };
+                                let sendData = 'name=' + data.field.login_name + '$^@^$phoneNumber=' + data.field.phoneNumber + '$^@^$email=' +
+                                    data.field.email + '$^@^$gender=' + data.field.gender +'$^@^$password=' + data.field.pwd2 + '$^@^$classification=' + 1;
+                                getFromWS("home/sie_web/personManage/addAdmin.template",sendData,obj,Result);
+                            }else
+                            {
+                                //修改
+                                let obj = new Array();
+                                let Result = function () {
+                                    if (obj[0] == 'ok'){
+                                        //修改成功
+                                        reloadTable();
+                                        //关闭弹出层
+                                        layer.closeAll();
+                                    }else{
+                                        layer.msg(`失败,${obj[0]}`, function() {
+                                            //关闭后的操作
+                                        });
+                                    }
+                                };
+                                let sendData = 'name=' + data.field.login_name + '$^@^$phoneNumber=' + data.field.phoneNumber + '$^@^$email=' +
+                                    data.field.email + '$^@^$password=' + '$^@^$gender=' + data.field.gender + data.field.pwd2 + '$^@^$id=' + data.field.id;
+                                getFromWS("home/sie_web/personManage/updateUser.template",sendData,obj,Result);
+                            }
+                        }
+                        else
+                        {
+                            //两次输入的密码不一致
+                            layer.msg('密码不一致', function() {
+                                //关闭后的操作
+                            });
+                            return false;
+                        }
+                        return false;
+                    });
+                    //新增教师
+                    form.on('submit(addTeacher)', function(data) {
+                        let pwd1 = data.field.pwd1;
+                        let pwd2 = data.field.pwd2;
+                        if(pwd1 == pwd2)
+                        {
+                            //判断是新增还是修改
+                            let haveId = $('#add-admin input[ name=\'id\' ] ').val();
+
+                            if(haveId == '')
+                            {
+                                //新增
+                                let obj = new Array();
+                                let Result = function () {
+                                    if (obj[0] == 'ok'){
+                                        //新增成功
+                                        reloadTable();
+                                        //关闭弹出层
+                                        layer.close(layer.index);
+                                    }else{
+                                        layer.msg(`失败`, function() {
+                                            //关闭后的操作
+                                        });
+                                    }
+                                };
+                                let sendData = 'name=' + data.field.login_name + '$^@^$phoneNumber=' + data.field.phoneNumber + '$^@^$email=' +
+                                    data.field.email + '$^@^$gender=' + data.field.gender +'$^@^$password=' + data.field.pwd2 + '$^@^$classification=' + 2;
+                                getFromWS("home/sie_web/personManage/addTeacher.template",sendData,obj,Result);
+                            }else
+                            {
+                                //修改
+                                let obj = new Array();
+                                let Result = function () {
+                                    if (obj[0] == 'ok'){
+                                        //修改成功
+                                        reloadTable();
+                                        //关闭弹出层
+                                        layer.closeAll();
+                                    }else{
+                                        layer.msg(`失败,${obj[0]}`, function() {
+                                            //关闭后的操作
+                                        });
+                                    }
+                                };
+                                let sendData = 'name=' + data.field.login_name + '$^@^$phoneNumber=' + data.field.phoneNumber + '$^@^$email=' +
+                                    data.field.email + '$^@^$password=' + '$^@^$gender=' + data.field.gender + data.field.pwd2 + '$^@^$classification=' + 2 + '$^@^$id=' + data.field.id;
+                                getFromWS("home/sie_web/personManage/updateTeacher.template",sendData,obj,Result);
+                            }
+                        }
+                        else
+                        {
+                            //两次输入的密码不一致
+                            layer.msg('密码不一致', function() {
+                                //关闭后的操作
+                            });
+                            return false;
+                        }
+                        return false;
+                    });
+                    //新增学生
+                    form.on('submit(addStudent)', function(data) {
+                        let pwd1 = data.field.pwd1;
+                        let pwd2 = data.field.pwd2;
+                        if(pwd1 == pwd2)
+                        {
+                            //判断是新增还是修改
+                            let haveId = $('#add-admin input[ name=\'id\' ] ').val();
+
+                            if(haveId == '')
+                            {
+                                //新增
+                                let obj = new Array();
+                                let Result = function () {
+                                    if (obj[0] == 'ok'){
+                                        //新增成功
+                                        reloadTable();
+                                        //关闭弹出层
+                                        layer.close(layer.index);
+                                    }else{
+                                        layer.msg(`失败`, function() {
+                                            //关闭后的操作
+                                        });
+                                    }
+                                };
+                                let sendData = 'name=' + data.field.login_name + '$^@^$phoneNumber=' + data.field.phoneNumber + '$^@^$email=' +
+                                    data.field.email + '$^@^$gender=' + data.field.gender +'$^@^$password=' + data.field.pwd2 + '$^@^$classification=' + 3;
+                                getFromWS("home/sie_web/personManage/addStudent.template",sendData,obj,Result);
+                            }else
+                            {
+                                //修改
+                                let obj = new Array();
+                                let Result = function () {
+                                    if (obj[0] == 'ok'){
+                                        //修改成功
+                                        reloadTable();
+                                        //关闭弹出层
+                                        layer.closeAll();
+                                    }else{
+                                        layer.msg(`失败,${obj[0]}`, function() {
+                                            //关闭后的操作
+                                        });
+                                    }
+                                };
+                                let sendData = 'name=' + data.field.login_name + '$^@^$phoneNumber=' + data.field.phoneNumber + '$^@^$email=' +
+                                    data.field.email + '$^@^$password=' + '$^@^$gender=' + data.field.gender + data.field.pwd2 + '$^@^$classification=' + 3 + '$^@^$id=' + data.field.id;
+                                getFromWS("home/sie_web/personManage/updateStudent.template",sendData,obj,Result);
+                            }
+                        }
+                        else
+                        {
+                            //两次输入的密码不一致
+                            layer.msg('密码不一致', function() {
+                                //关闭后的操作
+                            });
+                            return false;
+                        }
+                        return false;
+                    });
+                });
+            </script>
+
+            <script type="text/html" id="articleType">
+                {{# if(d.articleType == 1){ }}
+                <div>{{ "教学活动" }}</div>
+                {{# }else if(d.articleType == 2){ }}
+                <div>{{ "政策公告" }}</div>
+                {{# }else if(d.articleType == 3){ }}
+                <div>{{ "文化交流" }}</div>
+                {{# }else if(d.articleType == 4){ }}
+                <div>{{ "其他新闻" }}</div>
+                {{# } }}
+            </script>
+            <script type="text/html" id="articleStatus">
+                {{# if(d.status == -1){ }}
+                <div class="statusNoPass" style="color: red;" title="点击查看原因" onclick="showReason('{{d.reason}}')">{{ "审核未通过" }}</div>
+                {{# }else if(d.status == 0){ }}
+                <div style="color: orange;">{{ "待审核" }}</div>
+                {{# }else if(d.status == 1){ }}
+                <div style="color: green;">{{ "已发布" }}</div>
+                {{# } }}
+            </script>
+            <script>
+                function showReason(reason) {
+                    layer.alert(reason);
+                }
+            </script>
+            <script type="text/html" id="tool">
+                {{# if(sessionStorage.getItem('classification') == 1){ }}
+                <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                {{# }else{ }}
+                {{# } }}
+            </script>
+        </div>
+    </div>
+</div>
+
+<div class="copyright">
+    <div class="footer">
+        <div class="technical-support">
+            武汉大学国家网络安全学院技术支持
+        </div>
+        <div class="organizer">
+            主办单位：汉语国际推广教学资源研究与开发基地 武汉大学国际教育学院
+        </div>
+        <div class="technical-support">
+            2019@ 技术支持：027-68777156 SHENJIAQIANG@WHU.EDU.CN
+        </div>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+</body>
+
+<!--新增管理员-->
+<div id="add-admin" class="add-admin" style="display: none">
+    <form class="layui-form">
+        <div class="layui-form-item">
+            <!--            存放id，用来区分是新建还是修改-->
+            <div class="layui-inline" style="display: none;">
+                <div class="layui-input-inline">
+                    <input type="text" name="id" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">登录名</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="login_name" lay-verify="required|loginName" autocomplete="off"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">电话号码</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="phoneNumber" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">邮箱</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="email" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">性别</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="gender" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-inline">
+                    <input type="password" name="pwd1" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">确认密码</label>
+                <div class="layui-input-inline">
+                    <input type="password" name="pwd2" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+        </div>
+        <button class="layui-btn u-btn layui-btn-sm layui-btn-normal u-btn-center" id="add-admin-btn" type="button"
+                lay-submit lay-filter="addAdmin" style="margin-left: 170px">
+            确定
+        </button>
+    </form>
+</div>
+
+<!--新增教师-->
+<div id="add-teacher" class="add-admin" style="display: none">
+    <form class="layui-form">
+        <div class="layui-form-item">
+            <!--            存放id，用来区分是新建还是修改-->
+            <div class="layui-inline" style="display: none;">
+                <div class="layui-input-inline">
+                    <input type="text" name="id" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">登录名</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="login_name" lay-verify="required|loginName" autocomplete="off"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">电话号码</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="phoneNumber" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">邮箱</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="email" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">性别</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="gender" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-inline">
+                    <input type="password" name="pwd1" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">确认密码</label>
+                <div class="layui-input-inline">
+                    <input type="password" name="pwd2" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+        </div>
+        <button class="layui-btn u-btn layui-btn-sm layui-btn-normal u-btn-center" id="add-teacher-btn" type="button"
+                lay-submit lay-filter="addTeacher" style="margin-left: 170px">
+            确定
+        </button>
+    </form>
+</div>
+
+<!--新增学生-->
+<div id="add-student" class="add-admin" style="display: none">
+    <form class="layui-form">
+        <div class="layui-form-item">
+            <!--            存放id，用来区分是新建还是修改-->
+            <div class="layui-inline" style="display: none;">
+                <div class="layui-input-inline">
+                    <input type="text" name="id" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">登录名</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="login_name" lay-verify="required|loginName" autocomplete="off"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">电话号码</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="phoneNumber" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">邮箱</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="email" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">性别</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="gender" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-inline">
+                    <input type="password" name="pwd1" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">确认密码</label>
+                <div class="layui-input-inline">
+                    <input type="password" name="pwd2" lay-verify="required" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+        </div>
+        <button class="layui-btn u-btn layui-btn-sm layui-btn-normal u-btn-center" id="add-student-btn" type="button"
+                lay-submit lay-filter="addStudent" style="margin-left: 170px">
+            确定
+        </button>
+    </form>
+</div>

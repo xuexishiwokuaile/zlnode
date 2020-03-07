@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>机构管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!--自定义样式 & layui配置 -->
+    <link rel="stylesheet" href="../../../../../../css/admin/departManage/departManage.css" media="all">
+    <link rel="stylesheet" href="../../layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../layuiadmin/style/admin.css" media="all">
+    <script src="../../layuiadmin/layui/layui.js"></script>
+    <script src="../../../../../../js/jquery.min.js"></script>
+    <!--Ztree-->
+    <script src="../../../../../../js/jquery.ztree.all.min.js"></script>
+    <link rel="stylesheet" href="../../../../../../css/zTreeStyle/zTreeStyle.css">
+    <!--zoolina系统基础系统配置-->
+    <script type="text/javascript" src="../../../../../../Scripts/StationJSLib.js"></script>
+    <script type="text/javascript" src="../../../../../../Scripts/zoolina.page.whu.plug.js"></script>
+
+    <script type="text/javascript">
+      let checkedDepart = '';//存放选中机构所有信息
+      let checkedDepartId = '';
+      let checkedDepartParentId = '';
+      $(function() {
+        //获取机构信息
+        var setting = {
+          data: {
+            simpleData: {
+              enable: true,
+            },
+          },
+          async: {
+            enable: true,
+            type: 'get',
+            dataType: 'json',
+            url: '/home/gjy/admin/departManage/getDepartment.template',
+            // dataFilter: filter
+          },
+          callback: {//请求成功后回调
+            onClick: onclickTree,//点击相关节点触发的事件
+            onAsyncSuccess: ztreeOnAsyncSuccess,//异步加载成功后执行的方法
+          },
+          view:{
+            showIcon: false,
+          }
+        };
+
+        //点击树触发的事件
+        function onclickTree(event, treeId, treeNode) {
+          // console.log(treeNode);
+          checkedDepart = treeNode; //当前节点的所有信息
+          checkedDepartId = treeNode.id; //当前节点的id
+          checkedDepartParentId = treeNode.pId; //当前节点的pid
+        };
+        //获取树成功后进行的回调操作
+        function ztreeOnAsyncSuccess(event, treeId, treeNode) {
+          //展开树
+          expand_ztree(treeId);
+          //设置图标
+          //var treeObj = $.fn.zTree.getZTreeObj("treeDemo");
+          //var nodes = treeObj.getNodes();
+        };
+        function expand_ztree(treeId) {
+          var treeObj = $.fn.zTree.getZTreeObj(treeId);
+          treeObj.expandAll(true);
+        }
+        $.fn.zTree.init($('#treeDemo'), setting);
+      });
+      //新建机构
+      function addDepart() {
+        layui.use('layer', function() {
+          var layer = layui.layer;
+          if (checkedDepart == '') {
+            layer.msg('请选择你要添加在哪一级机构下', function() {
+              //关闭后的操作
+            });
+            return false;
+          } else if (checkedDepart.pId == 0 || checkedDepart.pId == null) {
+            layer.open({
+              type: 1,
+              area: ['380px', '240px'],
+              shadeClose: true, //点击遮罩关闭
+              title: '新建机构',
+              content: $('#add-depart'),
+            });
+            $('.add-depart-parentId').val(checkedDepartId);
+          } else {
+            layer.msg('不允许添加三级机构', function() {
+              //关闭后的操作
+            });
+            return false;
+          }
+        });
+      };
+      // 监听添加机构-提交
+      layui.use('form', function() {
+        var form = layui.form;
+        //监听提交
+        form.on('submit(addForm)', function(data) {
+          // console.log(JSON.stringify(data.field));
+
+          let obj = new Array();
+          var addResult = function() {
+            // console.log(obj[0]);
+            if (obj[0] == 'ok') {
+              window.location.reload();
+            } else {
+              layer.msg('添加失败', {icon: 5});
+            }
+          };
+          getFromWS('home/gjy/admin/departManage/addDepartment.template',
+              'depart_name=' + data.field.departName + '$^@^$sort=' + data.field.departSort + '$^@^$pid=' +
+              data.field.parentId, obj, addResult);
+          return false;
+        });
+      });
+      //修改机构
+      function modifyDepart() {
+        //加载select选项
+        layui.use(['jquery', 'form'], function() {
+          var form = layui.form;
+          //加载select
+          let options = '';
+          let obj = new Array();
+          let Result = function(){
+            let departs = JSON.parse(obj[0]);
+            for (let i = 0; i < departs.length; i++) {
+              if (checkedDepartParentId == departs[i].id) {
+                // 当前机构的父机构ID = select 遍历的ID
+                options += `<option value="${departs[i].id}" selected>${departs[i].name}</option>`;
+              } else if (checkedDepartId == departs[i].id) {
+                // 当前机构的ID = select 遍历的 ID  则不需要加载到select中
+                continue;
+              } else {
+                options += `<option value="${departs[i].id}">${departs[i].name}</option>`;
+              }
+            };
+            $('#parentName').html(options);
+            form.render('select'); //更新select
+          };
+          getFromWS("home/gjy/admin/departManage/getDepartment.template","",obj,Result);
+        });
+
+        layui.use('layer', function() {
+          var layer = layui.layer;
+          if (checkedDepart == '') {
+            layer.msg('请选择你要修改的机构', function() {
+              //关闭后的操作
+            });
+            return false;
+          } else if (checkedDepart.pId != null) {
+            layer.open({
+              type: 1,
+              area: ['440px', '320px'],
+              shadeClose: true, //点击遮罩关闭
+              title: '修改机构',
+              content: $('#modify-depart'),
+            });
+            $('.modify-depart-parentId').val(checkedDepartParentId);
+            $('.modify-depart-id').val(checkedDepartId);
+            $('#modify-departName').val(checkedDepart.name);
+            $('#modify-departSort').val(checkedDepart.sort);
+          } else {
+            layer.msg('根节点不允许修改', function() {
+              //关闭后的操作
+            });
+            return false;
+          }
+        });
+      };
+      // 监听修改机构-提交
+      layui.use(['jquery', 'form'], function() {
+        var form = layui.form;
+        //监听提交
+        form.on('submit(modifyForm)', function(data) {
+          console.log(JSON.stringify(data.field));
+          // console.log(data.field.id);
+
+          let obj = new Array();
+          var modifyResult = function() {
+            // console.log(obj[0]);
+            if (obj[0] == 'ok') {
+              window.location.reload();
+            } else {
+              layer.msg('修改失败', {icon: 5});
+            }
+          };
+          getFromWS('home/gjy/admin/departManage/modifyDepartment.template',
+              'depart_name=' + data.field.departName + '$^@^$sort=' + data.field.departSort + '$^@^$new_parent_id=' +
+              data.field.newParentId + '$^@^$id=' + data.field.id + '$^@^$old_parent_id=' + data.field.oldParentId, obj,
+              modifyResult);
+          return false;
+        });
+      });
+
+      //删除机构
+      function delDepart() {
+        layui.use('layer', function() {
+          var layer = layui.layer;
+          if (checkedDepart == '') {
+            layer.msg('请选择你要删除的机构', function() {
+              //关闭后的操作
+            });
+            return false;
+          } else if (checkedDepart.pId != null) {
+            let obj = new Array();
+            var modifyResult = function() {
+              // console.log(obj[0]);
+              if (obj[0] == 'ok') {
+                window.location.reload();
+              } else {
+                layer.msg('该机构不允许删除', {icon: 5});
+              }
+            };
+            getFromWS('home/gjy/admin/departManage/deleteDepartment.template', 'id=' + checkedDepartId, obj, modifyResult);
+            return false;
+          } else {
+            layer.msg('根节点不允许删除', function() {
+              //关闭后的操作
+            });
+            return false;
+          }
+        });
+      }
+    </script>
+</head>
+<body>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+            <button class="layui-btn layui-btn-sm" onclick="addDepart()">添加</button>
+            <button class="layui-btn layui-btn-sm" onclick="modifyDepart()">修改</button>
+            <button class="layui-btn layui-btn-sm" onclick="delDepart()">删除</button>
+        </div>
+
+        <div class="layui-card-body">
+            <!--<div id="tree"></div>-->
+            <div class="zTreeDemoBackground left">
+                <ul id="treeDemo" class="ztree"></ul>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="../../../../../../Scripts/StationJSLib.js"></script>
+<script type="text/javascript" src="../../../../../../Scripts/StationJSLib-bak.js"></script>
+</body>
+<!--新建机构-弹出层-->
+<div id="add-depart" class="add-depart" style="display: none;">
+    <form class="layui-form add-depart-from-position">
+        <div class="layui-form-item">
+            <label class="layui-form-label">机构名称</label>
+            <div class="layui-input-inline">
+                <input type="text" name="departName" required lay-verify="required" placeholder="请输入机构名称"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">排&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;序</label>
+            <div class="layui-input-inline">
+                <input type="text" name="departSort" required lay-verify="required" placeholder="请输入排序"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-inline">
+                <!--隐藏域，存放新建节点的父节点id-->
+                <input type="hidden" name="parentId" class="layui-input add-depart-parentId">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block add-depart-button-position">
+                <button class="layui-btn" lay-submit lay-filter="addForm">添加</button>
+            </div>
+        </div>
+    </form>
+</div>
+<!--修改机构-弹出层-->
+<div id="modify-depart" class="modify-depart" style="display: none;">
+    <form class="layui-form modify-depart-from-position">
+        <div class="layui-form-item">
+            <label class="layui-form-label">上级机构</label>
+            <div class="layui-input-inline">
+                <select name="newParentId" lay-filter="parentName" id="parentName" lay-search>
+
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">机构名称</label>
+            <div class="layui-input-inline">
+                <input type="text" id="modify-departName" name="departName" required lay-verify="required"
+                       placeholder="请输入机构名称" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">排&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;序</label>
+            <div class="layui-input-inline">
+                <input type="text" id="modify-departSort" name="departSort" required lay-verify="required"
+                       placeholder="请输入排序" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-inline">
+                <!--隐藏域，存放父节点id-->
+                <input type="hidden" name="oldParentId" class="layui-input modify-depart-parentId">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-inline">
+                <!--隐藏域，存放节点id-->
+                <input type="hidden" name="id" class="layui-input modify-depart-id">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block modify-depart-button-position">
+                <button class="layui-btn" lay-submit lay-filter="modifyForm">修改</button>
+            </div>
+        </div>
+    </form>
+</div>
+</html>

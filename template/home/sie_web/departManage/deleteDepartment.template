@@ -1,0 +1,33 @@
+<%
+    /// 文 件 名：deleteDepartment
+    /// 描    述：删除机构(用一句话描述该文件做什么)  
+    /// 项目名称：sie_web      
+    /// 作    者：武汉大学国家网络安全学院@沈家强    
+    /// 发布日期：2019/5/24 15:39  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+    debugMsg("[DEBUGMSG]:deleteDepartment.template 位置:13:"+"id="+:id)
+    /// 不允许删除的情况： 二级机构有子机构   机构中有用户
+    :sql_have_child = "SELECT * FROM st_depart_map WHERE pid = ?"
+    :resultRecord_have_child = changeRecordSet(:sql_have_child,S(:id))
+    :recordNum_depart = recordCount()
+
+    :sql_have_users="SELECT * FROM st_passports WHERE id = ?"
+    :resultRecord_have_users = changeRecordSet(:sql_have_users,S(:id))
+    :recordNum_users = recordCount()
+
+
+    If :recordNum_depart != 0 || :recordNum_users != 0
+        ///有子机构/机构下有用户
+        ="ban"
+    Else
+        ///分支主体
+        :sql_delete="DELETE FROM st_depart_map WHERE id=?"
+        :resultRecord = execSQL(:sql_delete,S(:id))
+        =:resultRecord
+    EndIf
+%>

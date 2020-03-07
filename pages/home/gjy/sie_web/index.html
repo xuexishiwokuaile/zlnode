@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+	<!-- Head -->
+	<head>
+		<title>汉语国际推广教学资源研究与开发基地</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta charset="utf-8">
+		<meta name="keywords" content="" />
+
+		<!-- default css files -->
+		<link rel="stylesheet" href="css/portal/bootstrap.css" type="text/css" media="all">
+		<link rel="stylesheet" href="css/portal/style.css" type="text/css" media="all">
+		<link rel="stylesheet" href="css/portal/font-awesome.min.css" />
+		<!-- default css files -->
+		<!-- 主页css -->
+		<link rel="stylesheet" type="text/css" href="css/portal/index.css" />
+		<!-- 通用css -->
+		<link rel="stylesheet" type="text/css" href="css/portal/comm.css" />
+		
+		<!--web font-->
+		<link href="http://fonts.googleapis.com/css?family=Noto+Sans:400,400i,700,700i&amp;subset=cyrillic,cyrillic-ext,devanagari,greek,greek-ext,latin-ext,vietnamese"
+		 rel="stylesheet">
+		<link href="http://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i,800,800i&amp;subset=cyrillic,cyrillic-ext,greek,greek-ext,latin-ext,vietnamese"
+		 rel="stylesheet">
+		<!--//web font-->
+		<!--JQ-->
+		<script src="js/jquery-2.1.4.min.js"></script>
+		<!--zoolina基础配置-->
+		<!--<script type="text/javascript" src="/Scripts/zoolina.page.whu.plug.js"></script>-->
+		<script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+
+		<script>
+			$(function() {
+              let userName = sessionStorage.getItem("loginName");
+              let userToken = sessionStorage.getItem("userToken");
+              let userId = sessionStorage.getItem("userId");
+              console.log(userToken == null);
+              let classification = sessionStorage.getItem("classification");
+
+              let objCheckLogin = new Array();
+              var checkLoginResult = function() {
+                console.log(objCheckLogin);
+                console.log("用户状态："+objCheckLogin[0]);
+                if(objCheckLogin[0]=="bad" || objCheckLogin[0]=="failed"||userName==null||userToken==null||userName==" "||userToken==" "){
+                  sessionStorage.setItem('userId'," ");
+                  sessionStorage.setItem('userToken'," ");
+                  sessionStorage.setItem('classification'," ");
+                  sessionStorage.setItem('loginName'," ");
+                  $(".rigster a").text("注册");
+                  $(".login a").text("登录");
+                  $(".login a").attr("href","pages/home/web/login/login.html");
+				  // window.location.reload();
+                }else{
+                  // 登录状态有效
+                  if (userToken != null){
+                    /// 用户已经登录
+                    if(classification == 2){
+                      /// 用户是管理员
+					  //$(".rigster").remove();
+                      // window.location="pages/home/admin/src/views/index.html";
+					  $(".rigster a").text("退出");
+					  //$(".rigster a").onclick=exit();
+					  localStorage.set('jwt','');
+					  localStorage.clear('jwt')
+                      $(".login a").attr("href","pages/home/admin/src/views/index.html");
+                      $(".login a").text(userName);
+                    }else{
+                      /// 普通用户
+                      //$(".rigster").remove();
+					  $(".rigster a").text("退出");
+					  //$(".rigster a").onclick=exit();
+                      $(".login a").attr("href","pages/home/web/personalCenter/html/user/index.html");
+                      $(".login a").text(userName);
+                    }
+                  }
+				}
+              };
+              getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+              //获取顶部菜单栏
+              let topMenu = new Array();
+              let topMenuResult = function(){
+                // console.log(topMenu[0]);
+                if(topMenu[0] != "bad"){
+                  let menusArray = JSON.parse(topMenu[0])
+                  console.log(menusArray)
+                  for(let i=0;i<menusArray.length;i++){
+                    if(menusArray[i].name == "首页"){
+                      $(".top-menu").append(`
+                        <li class="active"><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+                    }else{
+                      $(".top-menu").append(`
+                        <li><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+                    }
+                  }
+                }
+              };
+              getFromWS("home/sie_web/index/getTopMenu.template","",topMenu,topMenuResult)
+
+            })
+		</script>
+	</head>
+	<!-- Body -->
+	<body>
+		<!-- banner -->
+		<div class="banner">
+			<div class="header-top">
+				<div class="header-outer">
+					<div class="header-top-left">
+						<div class="header-logo"><img src="img/logo.png"></div>
+						<span class="language">中文</span><span class="language">ENGLISH</span>
+					</div>
+					<div class="header-top-right">
+						<div>
+							<p class="header-email-tel"><i class="fa fa-envelope" aria-hidden="true"></i><a href="mailto:liuyan@whu.edu.cn">LIUYAN@WHU.EDU.CN</a></p>
+							<p class="header-email-tel"><i class="fa fa-phone" aria-hidden="true"></i> +86 8765 8888</p>
+						</div>
+						<div class="login-rigster">
+							<div class="login">
+								<a href="pages/home/web/login/login.html">登录</a>
+							</div>
+							<div class="rigster">
+								<a href="pages/home/web/login/login.html">注册</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="head">
+				<div class="container">
+					<div class="navbar-top">
+						<!-- Brand and toggle get grouped for better mobile display -->
+						<div class="navbar-header">
+							<div class="navbar-brand logo">
+								<a href="index.html" class="header-title">汉语国际推广教学资源研究与开发基地</a>
+							</div>
+						</div>
+						<!-- Collect the nav links, forms, and other content for toggling -->
+						<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+							<ul class="nav navbar-nav link-effect-4 top-menu">
+								<!--<li class="active"><a href="index.html" data-hover="Home">首页</a></li>-->
+								<!--<li><a href="about.html" data-hover="About">关于我们</a> </li>-->
+								<!--<li><a href="newslist.html" data-hover="News">新闻动态</a></li>-->
+								<!--<li><a href="#" data-hover="Policy">政策公告</a></li>-->
+								<!--<li><a href="#" data-hover="Culture">文化体验平台</a></li>-->
+								<!--<li><a href="#" data-hover="Teacher">国际语言教师</a></li>-->
+								<!--<li><a href="#" data-hover="Resource">汉推资源研发</a></li>-->
+							</ul>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+				</div>
+			</div>
+			<div class="bannerinfo">
+				<div class="container">
+					<div class="col-md-5 bannergrid">
+						<div class="top">
+							<h5>中华文化体验平台</h5>
+							<h6>CHINESE CULTURE EXPERIENCE PLATFORM</h6>
+						</div>
+						<div class="bottom">
+							<div class="col-md-6 bannergrid1 clr">
+								<i class="fa fa-book" aria-hidden="true"></i>
+								<a href="pages/home/web/files/filebrowser.html">
+								<h4>资源下载</h4>
+								<div class="clearfix"></div>
+								<div class="bannergrid1-english">
+									<p>DOWNLOAD</p>
+									<p>RESOURCES</p>
+								</div>
+								</a>
+							</div>
+							<div class="col-md-6 bannergrid1 clr1">
+								<i class="fa fa-graduation-cap" aria-hidden="true"></i>
+								<h4>留学生</h4>
+								<div class="clearfix"></div>
+								<div class="bannergrid1-english">
+									<p>INTERNATIONAL</p>
+									<p>STUDENTS</p>
+								</div>
+							</div>
+							<div class="clearfix"></div>
+							<div class="col-md-6 bannergrid1 clr2">
+								<i class="fa fa-pencil" aria-hidden="true"></i>
+								<h4>在线课堂</h4>
+								<div class="clearfix"></div>
+								<div class="bannergrid1-english">
+									<p>ONLINE</p>
+									<p>CLASS</p>
+								</div>
+							</div>
+							<div class="col-md-6 bannergrid1 clr3">
+								<i class="fa fa-university" aria-hidden="true"></i>
+								<h4>学术交流</h4>
+								<div class="clearfix"></div>
+								<div class="bannergrid1-english">
+									<p>ACADEMIC</p>
+									<p>EXCHANGE</p>
+								</div>
+							</div>
+							<div class="clearfix"></div>
+							<div class="col-md-6 bannergrid1 clr4">
+								<i class="fa fa-bicycle" aria-hidden="true"></i>
+								<h4>武汉大学</h4>
+								<div class="clearfix"></div>
+								<div class="bannergrid1-english">
+									<p>WUHAN</p>
+									<p>UNIVERSITY</p>
+								</div>
+							</div>
+							<div class="col-md-6 bannergrid1 clr5">
+								<i class="fa fa-cog" aria-hidden="true"></i>
+								<h4>中华文化</h4>
+								<div class="clearfix"></div>
+								<div class="bannergrid1-english">
+									<p>CHINESE</p>
+									<p>CULTURE</p>
+								</div>
+							</div>
+							<div class="clearfix"></div>
+						</div>
+						<div class="clearfix"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- //banner -->
+
+		<!-- welcome -->
+		<div class="welcome">
+			<div class="container">
+				<div class="welcome-grids">
+					<div class="col-md-6 welcome-w3right">
+						<img src="images/welcome.jpg" class="img-responsive" alt="" />
+						<div class="wthree-model-video">
+							<a class="#" data-toggle="modal" data-target="#myModal1">
+								<span class="glyphicon glyphicon-play-circle" aria-hidden="true"></span>
+							</a>
+						</div>
+					</div>
+					<div class="col-md-6 welcome-w3left">
+						<!-- <h3>Temporibus autem quibusdam omnis dolor amet?</h3> -->
+						<p>留学生兴趣课堂是留学生施展个人才艺、锻炼演说技巧、展示汉语学习成果的独特舞台。我校鼓励有才艺特长的留学生在课余时间面向全校师生开设兴趣课堂。每学期通常开设一至两期兴趣课堂，每期兴趣课堂分为八次课程，每周开课一次，持续两个月时间。留学生管理办公室在每年四月和九月动员和挖掘有才艺特长且表现力佳学生
+							，确定本学期兴趣课堂的课程名称及课表，制作海报面向全校师生进行宣传。自2014年10月“罗燕教你学拉丁”开始，已先后开设“先咏教你学韩语”“Patrick教你说英文”“浩然带你走进土耳其”“笨笨带你读中国古代典籍”“跟着白小欢学法语”六期课程。</p>
+						<div class="readmore-w3">
+							<a class="readmore" href="#" data-toggle="modal" data-target="#myModal1">在线课堂</a>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+				</div>
+			</div>
+		</div>
+		<!-- //welcome -->
+
+		<!-- book1 -->
+		<div class="book  book1 jarallax">
+			<div class="container">
+				<!-- <h3>Education is the most powerful weapon which you can use to </h3>
+				<h3>change the world.</h3> -->
+				<p>WUHAN UNIVERSITY HAS A LONG HISTORY OF INTERNATIONAL STUDENTS’ EDUCATION. SINCE 1950S, IT HAD BEGUN TO ENROLL
+					OVERSEA STUDENTS. IT IS ONE OF THE EARLIEST UNIVERSITIES TO RECRUIT FOREIGN STUDENTS. IN 2016, WUHAN UNIVERSITY
+					HAS MORE THAN 3500 INTERNATIONAL STUDENTS, COVERING 200 MAJORS IN 30 SCHOOLS (DEPARTMENTS, RESEARCH CENTERS), AND
+					NOW IT HAS DEVELOPED GRADUALLY INTO THE BIGGEST INTERNATIONAL STUDENTS’ DESTINATION IN CENTRAL AND WESTERN CHINA.</p>
+			</div>
+		</div>
+
+		<!-- Education -->
+		<div class="education">
+			<div class="education-title">
+				<a href="#">学术交流</a>
+			</div>
+			<h3 class="heading">ACADEMIC EXCHANGE</h3>
+			<div class="container">
+				<div class="col-md-4 eduleft">
+					<div class="left1">
+						<h3>2018年</h3>
+						<p>12月12日</p>
+						<span class="glyphicon glyphicon-adjust" aria-hidden="true"></span>
+					</div>
+					<div class="left1">
+						<h3>2018年</h3>
+						<p>12月12日</p>
+						<span class="glyphicon glyphicon-adjust" aria-hidden="true"></span>
+					</div>
+					<div class="left1">
+						<h3>2018年</h3>
+						<p>12月12日</p>
+						<span class="glyphicon glyphicon-adjust" aria-hidden="true"></span>
+					</div>
+					<div class="left1">
+						<h3>2018年</h3>
+						<p>12月12日</p>
+						<span class="glyphicon glyphicon-adjust" aria-hidden="true"></span>
+					</div>
+				</div>
+				<div class="col-md-8 eduright">
+					<div class="right1">
+						<h3>泰国坦亚武里皇家理工大学汉语短期班圆满结束</h3>
+						<p>2018年12月28日上午，来自泰国皇家坦亚武里理工大学(RMUTT)的12名工商管理专业本科生上完最后一节陈静老师的汉语综合课，圆满完成了两周的汉语学习。学生们将于下周转至武汉自贸区进行两个多月业务实习，将把所学的专业知识和基础汉语运用到实习岗位上。</p>
+					</div>
+					<div class="right1">
+						<h3>泰国坦亚武里皇家理工大学汉语短期班圆满结束</h3>
+						<p>2018年12月28日上午，来自泰国皇家坦亚武里理工大学(RMUTT)的12名工商管理专业本科生上完最后一节陈静老师的汉语综合课，圆满完成了两周的汉语学习。学生们将于下周转至武汉自贸区进行两个多月业务实习，将把所学的专业知识和基础汉语运用到实习岗位上。</p>
+					</div>
+					<div class="right1">
+						<h3>泰国坦亚武里皇家理工大学汉语短期班圆满结束</h3>
+						<p>2018年12月28日上午，来自泰国皇家坦亚武里理工大学(RMUTT)的12名工商管理专业本科生上完最后一节陈静老师的汉语综合课，圆满完成了两周的汉语学习。学生们将于下周转至武汉自贸区进行两个多月业务实习，将把所学的专业知识和基础汉语运用到实习岗位上。</p>
+					</div>
+					<div class="right1">
+						<h3>泰国坦亚武里皇家理工大学汉语短期班圆满结束</h3>
+						<p>2018年12月28日上午，来自泰国皇家坦亚武里理工大学(RMUTT)的12名工商管理专业本科生上完最后一节陈静老师的汉语综合课，圆满完成了两周的汉语学习。学生们将于下周转至武汉自贸区进行两个多月业务实习，将把所学的专业知识和基础汉语运用到实习岗位上。</p>
+					</div>
+				</div>
+				<div class="clearfix"></div>
+			</div>
+			<div class="education-more">
+				<a href="#">MORE</a>
+			</div>
+		</div>
+		<!-- //Education -->
+
+		<!-- book -->
+		<div class="book jarallax">
+			<div class="container">
+				<p>WUHAN UNIVERSITY HAS A LONG HISTORY OF INTERNATIONAL STUDENTS’ EDUCATION. SINCE 1950S, IT HAD BEGUN TO ENROLL
+					OVERSEA STUDENTS. IT IS ONE OF THE EARLIEST UNIVERSITIES TO RECRUIT FOREIGN STUDENTS. IN 2016, WUHAN UNIVERSITY
+					HAS MORE THAN 3500 INTERNATIONAL STUDENTS, COVERING 200 MAJORS IN 30 SCHOOLS (DEPARTMENTS, RESEARCH CENTERS), AND
+					NOW IT HAS DEVELOPED GRADUALLY INTO THE BIGGEST INTERNATIONAL STUDENTS’ DESTINATION IN CENTRAL AND WESTERN CHINA.</p>
+			</div>
+		</div>
+		<!-- //book -->
+
+		<!-- clients-->
+		<div class="clients" id="clients">
+			<div class="education-clients">
+				<a href="#">留学生</a>
+			</div>
+			<h3 class="heading">INTERNATIONAL STUDENTS</h3>
+			<div class="container">
+				<h3 class="heading">What our students say's</h3>
+				<div class="wmuSlider example1 animated wow slideInUp" data-wow-delay=".5s">
+					<div class="wmuSliderWrapper">
+						<article style="position: absolute; width: 100%; opacity: 0;">
+							<div class="banner-wrap">
+								<div class="col-md-4 client-grids">
+									<p>武汉大学国际教育历史悠久，从20世纪50年代起就开始接收外国留学生，是我国最早接收外国留学生的院校之一。五十多年来，武汉大学留学生教育规模不断扩大，先后有来自世界110多个国家和地区的数千名留学生在校学习和生活。</p>
+									<div class="col-md-5 c-img">
+										<img src="images/c1.jpg" alt="" />
+									</div>
+									<div class="col-md-7 c-info">
+										<h4>Jackie</h4>
+										<h5>student1</h5>
+									</div>
+									<div class="clearfix"></div>
+								</div>
+								<div class="col-md-4 client-grids">
+									<p>武汉大学国际教育历史悠久，从20世纪50年代起就开始接收外国留学生，是我国最早接收外国留学生的院校之一。五十多年来，武汉大学留学生教育规模不断扩大，先后有来自世界110多个国家和地区的数千名留学生在校学习和生活。</p>
+									<div class="col-md-5 c-img">
+										<img src="images/c2.jpg" alt="" />
+									</div>
+									<div class="col-md-7 c-info">
+										<h4>Charlize</h4>
+										<h5>student2</h5>
+									</div>
+									<div class="clearfix"></div>
+								</div>
+								<div class="col-md-4 client-grids">
+									<p>武汉大学国际教育历史悠久，从20世纪50年代起就开始接收外国留学生，是我国最早接收外国留学生的院校之一。五十多年来，武汉大学留学生教育规模不断扩大，先后有来自世界110多个国家和地区的数千名留学生在校学习和生活。</p>
+									<div class="col-md-5 c-img">
+										<img src="images/c3.jpg" alt="" />
+									</div>
+									<div class="col-md-7 c-info">
+										<h4>Jessica</h4>
+										<h5>student3</h5>
+									</div>
+									<div class="clearfix"></div>
+								</div>
+								<div class="clearfix"></div>
+							</div>
+						</article>
+						<article style="position: absolute; width: 100%; opacity: 0;">
+							<div class="banner-wrap">
+								<div class="col-md-4 client-grids">
+									<p>武汉大学国际教育历史悠久，从20世纪50年代起就开始接收外国留学生，是我国最早接收外国留学生的院校之一。五十多年来，武汉大学留学生教育规模不断扩大，先后有来自世界110多个国家和地区的数千名留学生在校学习和生活。</p>
+									<div class="col-md-5 c-img">
+										<img src="images/c4.jpg" alt="" />
+									</div>
+									<div class="col-md-7 c-info">
+										<h4>Daniel</h4>
+										<h5>student4</h5>
+									</div>
+									<div class="clearfix"></div>
+								</div>
+								<div class="col-md-4 client-grids">
+									<p>武汉大学国际教育历史悠久，从20世纪50年代起就开始接收外国留学生，是我国最早接收外国留学生的院校之一。五十多年来，武汉大学留学生教育规模不断扩大，先后有来自世界110多个国家和地区的数千名留学生在校学习和生活。</p>
+									<div class="col-md-5 c-img">
+										<img src="images/c5.jpg" alt="" />
+									</div>
+									<div class="col-md-7 c-info">
+										<h4>Johnson</h4>
+										<h5>student5</h5>
+									</div>
+									<div class="clearfix"></div>
+								</div>
+								<div class="col-md-4 client-grids">
+									<p>武汉大学国际教育历史悠久，从20世纪50年代起就开始接收外国留学生，是我国最早接收外国留学生的院校之一。五十多年来，武汉大学留学生教育规模不断扩大，先后有来自世界110多个国家和地区的数千名留学生在校学习和生活。</p>
+									<div class="col-md-5 c-img">
+										<img src="images/c6.jpg" alt="" />
+									</div>
+									<div class="col-md-7 c-info">
+										<h4>Scarllet</h4>
+										<h5>student6</h5>
+									</div>
+									<div class="clearfix"></div>
+								</div>
+								<div class="clearfix"></div>
+							</div>
+						</article>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!--//clients-->
+
+		<!-- copyright -->
+		<div class="copyright links">
+			<div class="container">
+				<div class="copyrightbottom links-outer">
+					<div class="links-title">
+						友情链接
+					</div>
+					<div class="links-items">
+						<div class="links-item">
+							<a href="#">汉语国际推广研究所</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广新师资培养基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉学家研修基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广多语种基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉语教学研究基地</a>
+						</div>
+					</div>
+					<div class="links-items">
+						<div class="links-item">
+							<a href="#">中华传统文化研究与体验基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广南方基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉语教师研修基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉语教材研发与培训基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉语传播湖南基地</a>
+						</div>
+					</div>
+					<div class="links-items">
+						<div class="links-item">
+							<a href="#">国际商务汉语教学与资源开发基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际商务汉语教学与资源开发基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广东北基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广多语种大连基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">东南亚汉语推广师资培训基地</a>
+						</div>
+					</div>
+				</div>
+				<div class="clearfix"></div>
+			</div>
+		</div>
+		<!-- //copyright -->
+		<!-- copyright -->
+		<div class="copyright">
+			<div class="footer">
+				<div class="technical-support">
+					武汉大学国家网络安全学院技术支持
+				</div>
+				<div class="organizer">
+					主办单位：汉语国际推广教学资源研究与开发基地 武汉大学国际教育学院
+				</div>
+				<div class="technical-support">
+					2019@ 技术支持：027-68777156 SHENJIAQIANG@WHU.EDU.CN
+				</div>
+			</div>
+			<div class="clearfix"></div>
+		</div>
+		<!-- //copyright -->
+
+
+
+		<!-- Default-JavaScript-File -->
+		<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="js/bootstrap.js"></script>
+		<!-- //Default-JavaScript-File -->
+
+		<!-- clients js file-->
+		<script src="js/jquery.wmuSlider.js"></script>
+		<script>
+			$('.example1').wmuSlider();
+		</script>
+		<!-- //clients js file -->
+
+		<!-- Jarallax -->
+		<script src="js/jarallax.js"></script>
+		<script type="text/javascript">
+			/* init Jarallax */
+			$('.jarallax').jarallax({
+				speed: 0.5,
+				imgWidth: 1366,
+				imgHeight: 768
+			})
+		</script>
+		<!-- //Jarallax -->
+	</body>
+	<!-- //Body -->
+</html>

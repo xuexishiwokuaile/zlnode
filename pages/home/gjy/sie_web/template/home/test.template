@@ -1,0 +1,18 @@
+
+<%
+    /// 文 件 名：test
+    /// 描    述：(用一句话描述该文件做什么)  
+    /// 项目名称：sie_web      
+    /// 作    者：武汉大学国家网络安全学院@沈家强    
+    /// 发布日期：2019/5/23 9:38  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+  :ids = "SIE2019130014060000214,SIE2019130014660000216,"
+  split(:ids, ",", &id)
+  debugMsg("[DEBUGMSG]:test.template 位置:16:"+"id[0]"+:id[0])
+  debugMsg("[DEBUGMSG]:test.template 位置:17:"+"id[1]"+:id[1])
+%>

@@ -1,0 +1,47 @@
+<%
+    /// 文 件 名：getArticlePage
+    /// 描    述：文章换页
+    /// 项目名称：GJY      
+    /// 作    者：武汉大学国家网络安全学院@王顺福    
+    /// 发布日期：2019/9/24 17:44  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+  :sql = "select * from article where status = '1'"
+  :resultRecord = changeRecordSet(:sql)
+  :recordNum = recordCount()
+  split(:recordNum/5,".", &array)
+  ///判断说明：判断页数是否恰被5整除
+  If arrayLength(&array) == 1
+    ///判断主体
+    :pageNumber = :array[0]
+  Else
+    ///分支主体
+    :pageNumber = :array[0]+1
+  EndIf
+
+   debugMsg(:page+"show_time")
+%>
+<div class="page-up"><a id="prePage" href="javascript:void(0)" onclick="prePage()">上一页</a></div>
+<%
+  :i = 0
+  ///循环判断
+  While :i < :pageNumber
+    If :page == :i+1
+    debugMsg("==========active==============")
+      %>
+      <div class="page-active" style = "margin: 0 0.5px" id="page<%=:i+1%>"><a href="?articlePage=<%=:i+1%>"><%=:i+1%></a></div>
+      <%
+    Else
+    debugMsg("==========inactive==============")
+      %>
+      <div class="page-inactive" style = "margin: 0 0.5px" id="page<%=:i+1%>"><a href="?articlePage=<%=:i+1%>"><%=:i+1%></a></div>
+      <%
+    EndIf
+    :i = :i+1
+  EndWhile
+%>
+<div class="page-down"><a id="nextPage" href="javascript:void(0)" onclick="nextPage()">下一页</a></div>

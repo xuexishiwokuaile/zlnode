@@ -1,0 +1,12 @@
+<%debugMsg("login_name========="#:login_name)
+:passwd = "123456"
+debugMsg("passwd============="#:passwd)
+
+sshExec("127.0.0.1","root","isswhu2015","cd /home/postgres/app/filebrowser; systemctl stop filebrowser")
+
+sshExec("127.0.0.1","root","isswhu2015","cd /home/postgres/app/filebrowser/container; mkdir "#:login_name)
+
+sshExec("127.0.0.1","root","isswhu2015","cd /home/postgres/app/filebrowser; ./main users add "#:login_name#" "#:passwd#" --scope ./"#:login_name )
+
+sshExec("127.0.0.1","root","isswhu2015","cd /home/postgres/app/filebrowser; systemctl start filebrowser")
+%>

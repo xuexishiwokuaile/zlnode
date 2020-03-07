@@ -1,0 +1,33 @@
+<%
+    /// 文 件 名：getUserInfo
+    /// 描    述：获取用户信息
+    /// 项目名称：sie_web
+    /// 作    者：
+    /// 发布日期：
+    /// 文件版本：V1.0
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved.
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+    debugMsg(:id)
+    :sql_selectUserInfo = "SELECT name,phonenumber,email,gender,passwd FROM st_passports WHERE id = ?"
+    :result_selectUserInfo = changeRecordSet(:sql_selectUserInfo,S(:id))
+
+    ///添加到json中
+    :result_records_array=""
+    If :result_selectUserInfo == "ok"
+        Repeat
+            :json_records_item = jsonAddItem("","name",S(name))
+            :json_records_item = jsonAddItem(:json_records_item,"phoneNumber",S(phonenumber))
+            :json_records_item = jsonAddItem(:json_records_item,"email",S(email))
+            :json_records_item = jsonAddItem(:json_records_item,"gender",S(gender))
+            :json_records_item = jsonAddItem(:json_records_item,"password",S(passwd))
+            :json_records_item = jsonAddItem(:json_records_item,"id",S(:id))
+            :json_records_array = jsonAddArrayItem(:result_records_array,:json_records_item)
+        EndRepeat
+        =:json_records_array
+    Else
+        =:"bad"
+    EndIf
+%>

@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>我的信息</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="fly,layui,前端社区">
+    <meta name="description" content="Fly社区是模块化前端UI框架Layui的官网社区，致力于为web开发提供强劲动力">
+    <link rel="stylesheet" href="../css/layui/css/layui.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/userHome.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css" />
+    <link rel="stylesheet" type="text/css" href="../css/comm.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <script src="../js/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+</head>
+<body style="margin-top: 0;">
+<script>
+  $(function() {
+    let userName = sessionStorage.getItem("loginName");
+    let userToken = sessionStorage.getItem("userToken");
+    let userId = sessionStorage.getItem("userId");
+    console.log(userToken == null);
+    let classification = sessionStorage.getItem("classification");
+
+    let objCheckLogin = new Array();
+    var checkLoginResult = function() {
+      console.log(objCheckLogin);
+      console.log("用户状态："+objCheckLogin[0]);
+      if (objCheckLogin[0] == 'bad' || objCheckLogin[0] == 'failed' || userName == null || userToken == null || userName == ' ' || userToken == ' ') {
+        sessionStorage.setItem('userId', ' ');
+        sessionStorage.setItem('userToken', ' ');
+        sessionStorage.setItem('classification', ' ');
+        sessionStorage.setItem('loginName', ' ');
+        var hrefPage = '/pages/home/sie_web/personalCenter/home.html';
+        console.log(hrefPage);
+        sessionStorage.setItem('hrefPage', hrefPage);
+        $('.rigster a').text('注册');
+        $('.login a').text('登录');
+        $('.login a').attr('href', 'login.html');
+      }else{
+        var name = sessionStorage.getItem("name");
+        console.log(name);
+        // 登录状态有效
+        if (userToken != null) {
+          $('.rigster a').text('退出');
+          $('.rigster a').attr('href', '/pages/home/sie_web/index.html');
+          $('.rigster a').click(function() {
+            sessionStorage.setItem('userId', ' ');
+            sessionStorage.setItem('userToken', ' ');
+            sessionStorage.setItem('classification', ' ');
+            sessionStorage.setItem('loginName', ' ');
+            sessionStorage.setItem('id', '');
+            sessionStorage.setItem('name', '');
+            var hrefPage = '/pages/home/sie_web/personalCenter/home.html';
+            console.log(hrefPage);
+            sessionStorage.setItem('hrefPage', hrefPage);
+          });
+          $('.login a').attr('href', '/pages/home/sie_web/personalCenter/home.html');
+          $('.login a').text(name);
+        }
+      }
+    };
+    getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+    // 加载左边菜单栏
+    // var obj_leftMenu = new Array();
+    // var processResult_leftMenu = function() {
+    //   $("#left_menu").html(obj_leftMenu[0]);
+    //   $("#personalMessage").attr("class","layui-nav-item layui-this");
+    // };
+    // getFromWS("home/sie_web/menu/getUserLeftMenu.template","classification="+classification,obj_leftMenu,processResult_leftMenu);
+  })
+</script>
+
+<div class="layui-container fly-marginTop fly-user-main">
+    <!--<ul class="layui-nav layui-nav-tree layui-inline" lay-filter="user" style="background: #1e252f" id="left_menu">-->
+    <!--</ul>-->
+
+    <div class="site-tree-mobile layui-hide">
+        <i class="layui-icon">&#xe602;</i>
+    </div>
+    <div class="site-mobile-shade"></div>
+
+    <div class="site-tree-mobile layui-hide">
+        <i class="layui-icon">&#xe602;</i>
+    </div>
+    <div class="site-mobile-shade"></div>
+
+
+    <div class="fly-panel fly-panel-user" pad20>
+
+    </div>
+</div>
+
+<!--<div class="copyright">-->
+<!--    <div class="footer">-->
+<!--        <div class="technical-support">-->
+<!--            武汉大学国家网络安全学院技术支持-->
+<!--        </div>-->
+<!--        <div class="organizer">-->
+<!--            主办单位：汉语国际推广教学资源研究与开发基地 武汉大学国际教育学院-->
+<!--        </div>-->
+<!--        <div class="technical-support">-->
+<!--            2019@ 技术支持：027-68777156 SHENJIAQIANG@WHU.EDU.CN-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    <div class="clearfix"></div>-->
+<!--</div>-->
+
+</body>
+</html>

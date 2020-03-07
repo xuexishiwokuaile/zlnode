@@ -1,0 +1,10 @@
+<%
+    debugMsg("[DEBUGMSG]:updateColumns.template 位置:CCCCCCCCCCCCC:"+"传入的参数为：icon="+:icon)
+    :sql_update = "UPDATE module_manage SET name=?,classification_id=? ,url=?,icon =? ,sort = ? where id=?"
+    :resultRecord =execSQL(:sql_update,S(:name),S(:authority),S(:url),S(:icon),S(:sort),S(:id))
+    If :resultRecord = "ok"
+      Exit "ok$^@^$UPDATED="
+    Else
+      Exit :resultRecord
+    EndIf
+%>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>国教院</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="../layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../layuiadmin/style/admin.css" media="all">
+    <script type="text/javascript" src="js/jquery-1.11.1.js"></script>
+    <!--zoolina基础配置-->
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+    <script type="text/javascript" src="js/uploadFile.js"></script>
+    <script type="text/javascript" src="/Scripts/common/jquery.system.whu.plugin.js"></script>
+    <!--    layui基础配置-->
+    <script src="../layuiadmin/layui/layui.js"></script>
+    <!--    头部区域css-->
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/comm.css" />
+    <script>
+      let jsonData = "";
+        $(function() {
+
+          // 取消关闭标志的红色背景
+          $('.layui-icon layui-unselect layui-tab-close').unbind('mouseenter').unbind('mouseleave');;
+
+
+          // $("#layadmin-iframe-main").attr("src", "/pages/home/sie_web/personalCenter/home.html");
+          //模式信息
+          //获取用户名称，设置在页面相关位置
+          let userName = sessionStorage.getItem("loginName");
+          $(".login-name").text(userName);
+          let classification = sessionStorage.getItem("classification");
+          let objTrans = new Array();
+          let processResult = function() {
+            //获取相应的json相应的内容
+            console.log(objTrans);
+            const json_data = $.parseJSON(objTrans[0]);
+            // 根据顺序排序
+            function sortModule(a,b){
+              return parseInt(a.moduleSort)- parseInt(b.moduleSort)
+            }
+            var strObj = new Object();
+            strObj.str = ``
+            function expandNodes(pid,obj)
+            {
+              var childNodes = json_data.filter((p) => {
+                return p.pid == pid;
+              });
+              if(childNodes.length==0)
+              {
+                return;
+              }
+              childNodes.sort(sortModule);
+              for(var i=0;i<childNodes.length;i++)
+              {
+                var this_child = json_data.filter((p) => {
+                  return p.pid == childNodes[i].id;
+                });
+                // 当该模块没有子模块进行如下操作
+                if(this_child.length==0)
+                {
+                  if(pid=="0")
+                  {
+                    obj.str+= `<li class="layui-nav-item ">
+                    <a href="javascript:;" lay-tips="${childNodes[i].moduleTitle}" lay-direction="2">
+                        <i class="layui-icon ${childNodes[i].moduleIcoClass}"></i>
+                        <cite>${childNodes[i].moduleTitle}</cite>
+                     </a>
+                    <dl class="layui-nav-child">`
+                    expandNodes(childNodes[i].id,obj);
+                    obj.str +=`</dl>
+                             </li>`
+                  }
+                  else{
+                    obj.str+= `
+                    <dd class="layui-nav-itemed layui-list">
+                       <a lay-href="${childNodes[i].url}">${childNodes[i].moduleTitle}</a>
+                    </dd>
+                    `
+                  }
+                }
+                else
+                {
+                  obj.str+= `<li class="layui-nav-item layui-nav-itemed">
+                    <a href="javascript:;" lay-tips="${childNodes[i].moduleTitle}" lay-direction="2">
+                        <i class="layui-icon ${childNodes[i].moduleIcoClass}"></i>
+                        <cite>${childNodes[i].moduleTitle}</cite>
+                     </a>
+                    <dl class="layui-nav-child">`
+                  expandNodes(childNodes[i].id,obj);
+                  obj.str +=`</dl>
+                             </li>`
+                }
+                if(pid=="0")
+                {
+                  $("#LAY-system-side-menu").append(obj.str)
+                  obj.str =``;
+                }
+              }
+              return;
+            }
+            expandNodes("0",strObj);
+          }
+          //加载相应的信息
+          getFromWS("home/sie_web/module/listModules.template", "classification="+classification, objTrans, processResult);
+        })
+
+      layui.config({
+        base: "../layuiadmin/", //静态资源所在路径
+      }).extend({
+        index: "lib/index", //主入口模块
+      }).use("index");
+    </script>
+</head>
+
+<body class="layui-layout-body">
+<div id="LAY_app">
+    <div class="layui-layout layui-layout-admin">
+        <!-- 头部区域 -->
+        <div class="header-top" style="height: 50px; background-repeat: no-repeat;">
+            <div class="header-outer">
+                <div class="header-top-left">
+                    <a class="header-logo" href="index.html">
+                        <img src="images/logo.png">
+                    </a>
+                    <a class="language">中文简体</a>
+                    <a class="language">ENGLISH</a>
+                    <a class="top-button" href="/pages/home/sie_web/quora/quoraList.html"><img src="images/askAnswer.png" alt="">问答平台</a>
+                    <a class="top-button"><img src="images/fileManage.png" alt="">资源库管理</a>
+                </div>
+                <div class="header-top-right" >
+                    <div class="login-rigster">
+                        <div class="login">
+                            <a href="index.html">退出</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 侧边菜单 -->
+        <div class="layui-side layui-side-menu">
+            <div class="layui-side-scroll">
+                <div class="layui-logo" lay-href="home/console.html">
+                    <span class="login-name">admin</span>
+                </div>
+                <!--左侧滑块-->
+                <ul class="layui-nav layui-nav-tree" lay-shrink="all" id="LAY-system-side-menu">
+                </ul>
+            </div>
+        </div>
+        <!-- 页面标签 -->
+        <div class="layadmin-pagetabs" id="LAY_app_tabs" style="top: 50px;">
+            <div class="layui-icon layadmin-tabs-control layui-icon-prev" layadmin-event="leftPage"></div>
+            <div class="layui-icon layadmin-tabs-control layui-icon-next" layadmin-event="rightPage"></div>
+            <div class="layui-icon layadmin-tabs-control layui-icon-down">
+                <ul class="layui-nav layadmin-tabs-select" lay-filter="layadmin-pagetabs-nav">
+                    <li class="layui-nav-item" lay-unselect>
+                        <a href="javascript:;"></a>
+                        <dl class="layui-nav-child layui-anim-fadein">
+                            <dd layadmin-event="closeThisTabs"><a href="javascript:;">关闭当前标签页</a></dd>
+                            <dd layadmin-event="closeOtherTabs"><a href="javascript:;">关闭其它标签页</a></dd>
+                            <dd layadmin-event="closeAllTabs"><a href="javascript:;">关闭全部标签页</a></dd>
+                        </dl>
+                    </li>
+                </ul>
+            </div>
+            <div class="layui-tab" lay-unauto lay-allowClose="true" lay-filter="layadmin-layout-tabs">
+                <ul class="layui-tab-title" id="LAY_app_tabsheader">
+                    <li lay-id="#"
+                        lay-attr="#" class="layui-this"><i
+                            class="layui-icon layui-icon-home"></i></li>
+                </ul>
+            </div>
+        </div>
+        <!-- 主体内容 -->
+        <div class="layui-body" id="LAY_app_body" style="top: 60px;">
+            <div class="layadmin-tabsbody-item layui-show">
+                <iframe src="" frameborder="0"
+                        class="layadmin-iframe" id="layadmin-iframe-main"></iframe>
+            </div>
+        </div>
+        <!-- 辅助元素，一般用于移动设备下遮罩 -->
+        <div class="layadmin-body-shade" layadmin-event="shade"></div>
+
+        <!-- 底部区域-->
+<!--        <div class="copyright">-->
+<!--            <div class="footer">-->
+<!--                <div class="technical-support">-->
+<!--                    武汉大学国家网络安全学院技术支持-->
+<!--                </div>-->
+<!--                <div class="organizer">-->
+<!--                    主办单位：汉语国际推广教学资源研究与开发基地 武汉大学国际教育学院-->
+<!--                </div>-->
+<!--                <div class="technical-support">-->
+<!--                    2019@ 技术支持：027-68777156 SHENJIAQIANG@WHU.EDU.CN-->
+<!--                </div>-->
+<!--            </div>-->
+<!--            <div class="clearfix"></div>-->
+<!--        </div>-->
+    </div>
+</div>
+
+</body>
+</html>
+
+

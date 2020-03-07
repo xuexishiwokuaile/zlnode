@@ -1,0 +1,14 @@
+<%
+debugMsg("[DEBUGMSG]:loadAllClassification.template 位置:13:"+:record_Array)
+:sql = "select * from cardiac_classification "
+:resultRecord = changeRecordSet(:sql)
+:recordNum = recordCount()
+:record_Array = ""
+Repeat
+  ///循环主体
+  :record_item = jsonAddItem("", "title", S(classification))
+  :record_item = jsonAddItem(:record_item,"value",S(id))
+  :record_Array = jsonAddArrayItem(:record_Array, :record_item)
+EndRepeat
+Exit :record_Array
+%>

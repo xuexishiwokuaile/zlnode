@@ -1,0 +1,39 @@
+<%
+    split(:ids, ",", &id)
+    :sql_get_module_manage = "select id from module_manage where name =?"
+    :resultGetRecord = changeRecordSet(:sql_get_module_manage,S("模块管理"))
+    :inalterable_id = id
+    :has_child = 0
+    :without_authority =0
+    :sql_batch_delete = "DELETE FROM module_manage WHERE id = ?"
+    :i=0
+    While :i < :ModuleCount
+      ///判断要删除的节点是否为无权限的节点
+      If :id[:i] !=:inalterable_id
+        :sql_find_child = "select * from module_manage where parent_id =?"
+        :resultCRecord = changeRecordSet(:sql_find_child,S(:id[:i]))
+        :recordNum = recordCount()
+        ///判断要删除的节点有没有孩子节点
+        If :recordNum==0
+          :resultRecord = execSQL(:sql_batch_delete,S(:id[:i]))
+        Else
+          :has_child=1
+        EndIf
+      Else
+        :without_authority =1
+      EndIf
+        :i = :i + 1
+    EndWhile
+    :record_item = ""
+    ///    用户没有权限或该模块下有子模块的情况下不允许删除
+    If :has_child==1||:without_authority==1
+      :record_item = jsonAddItem(:record_item, "code", S("0"))
+      :record_item = jsonAddItem(:record_item,"data",S("由于用户没有权限或模块下有子模块，部分模块无法删除"))
+    Else
+      :record_item = jsonAddItem(:record_item, "code", S("1"))
+      :record_item = jsonAddItem(:record_item,"data",S("删除成功"))
+    EndIf
+    debugMsg("[DEBUGMSG]:sDelModules.template 位置:34:"+"----------recordItem:"+:record_item)
+    :record_array = jsonAddArrayItem(:record_array, :record_item)
+    Exit :record_array
+%>

@@ -1,0 +1,34 @@
+<%
+    /// 文 件 名：deleteColumn
+    /// 描    述：删除栏目(用一句话描述该文件做什么)  
+    /// 项目名称：sie_web      
+    /// 作    者：武汉大学国家网络安全学院@沈家强    
+    /// 发布日期：2019/6/11 10:42  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+
+<%
+    debugMsg("[DEBUGMSG]:deleteDepartment.template 位置:13:"+"id="+:id)
+    /// 不允许删除的情况： 二级栏目有子栏目   栏目中有文章
+    :sql_have_child = "SELECT * FROM columns WHERE pid = ?"
+    :resultRecord_have_child = changeRecordSet(:sql_have_child,S(:id))
+    :recordNum_column = recordCount()
+
+    :sql_have_users="SELECT * FROM article WHERE article_type = ?"
+    :resultRecord_have_article = changeRecordSet(:sql_have_users,S(:id))
+    :recordNum_article = recordCount()
+
+
+    If :recordNum_column != 0 || :recordNum_article != 0
+        ///有子栏目
+        ="ban"
+    Else
+        ///分支主体
+        :sql_delete="DELETE FROM columns WHERE id=?"
+        :resultRecord = execSQL(:sql_delete,S(:id))
+        =:resultRecord
+    EndIf
+%>

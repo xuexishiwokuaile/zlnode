@@ -1,0 +1,18 @@
+<%:varname = "ServerId" # getServerId()"%>
+<%:varvalue = 1%>  ///这里随便给一个值都可以，主要是表明变量存在即可
+<%:owner="system"%>
+<%:ttl=240%>
+<%:serverToken= getServerToken()%>
+<%:x=writeGlobalVar(:varname,:varvalue,:owner,:ttl,:serverToken)%>
+<%If :x=="ok"%>
+    <%debugMsg("ttl has been updated")%>
+<%Else%>
+    <%debugMsg(:x)%>
+<%EndIf%>
+<%:x=registerServer(:serverToken)%>
+<%If :x=="ok"%>
+    <%debugMsg("server has been registered")%>
+<%Else%>
+    <%debugMsg(:x)%>
+<%EndIf%>
+

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>注册登录</title>
+    <!--图标样式-->
+    <link rel='stylesheet' href='css/font-awesome.css'>
+    <link rel="stylesheet" href="css/register.css">
+    <script src="js/jquery-2.1.4.min.js"></script>
+    <!---->
+    <script src="js/layer/layer.js"></script>
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+
+    <script>
+      // 验证注册登录名是否重复
+      var isChecked = false;
+      function checkRepeat() {
+        var obj_checkRepeat = new Array();
+        var login_name = $("#register_username").val();
+        console.log(login_name);
+        var processResult_checkRepeat = function(){
+          console.log(obj_checkRepeat);
+          if (obj_checkRepeat[0] == 'ok') {
+            $("#register_username").after("<lable id='checkFalse' style='margin-left: 0;font-size: 5px;color: red;width: 100%;text-align:left'>登录名已被使用</lable>");
+            isChecked = false;
+          }
+          else {
+            $("#checkFalse").css("display","none");
+            isChecked = true;
+          }
+        };
+        getFromWS("home/sie_web/userManage/checkRepeat.template","loginName="+login_name,obj_checkRepeat,processResult_checkRepeat);
+      }
+
+      jQuery(document).ready(function($){
+        //登录
+        $("#login").submit(function() {
+          let loginName = $("#username").val();
+          let password = $("#password").val();
+          if(username == "" || password == ""){
+            layer.msg('用户名或密码为空', function(){});
+            return false;
+          }
+          function passResult(results){
+            console.log(results);
+            var fig = results[0].substring(0,6); 	//获取对应的返回头信息
+            if(fig==="failed"){
+              layer.msg('登录失败，用户名或密码错误', function(){
+                //关闭后的操作
+              });
+            }
+            else{
+              console.log(results);
+              sessionStorage.setItem('userId',results[0]);
+              sessionStorage.setItem('userToken',results[1]);
+              sessionStorage.setItem('classification',results[2]);
+              sessionStorage.setItem('loginName',results[3]);
+
+              //获取用户名和id
+              var obj_user = new Array();
+              var processResult_getUser = function() {
+                console.log(obj_user);
+                sessionStorage.setItem("id",obj_user[0]);
+                sessionStorage.setItem("name",obj_user[1].replace(/\s/g,""));
+
+                var hrefPage = sessionStorage.getItem("hrefPage");
+                window.location = hrefPage;
+              };
+              getFromWS("home/sie_web/articleComment/getUser.template","login_name="+results[3],obj_user,processResult_getUser);
+            }
+          }
+          login(loginName,password,passResult);	///登录login
+          return false;
+        });
+
+        //默认身份为学生
+        $("input[type='radio'][name='identity']:eq(0)").click();
+
+        //清空注册的用户名和密码
+        $("#register_username").val("");
+        $("#register_password").val("");
+        $("#check_password").val("");
+
+        //注册
+        $("#register").submit(function () {
+          if (isChecked) {
+            let registername=$("#register_username").val();
+            let registerpass=$("#register_password").val();
+            let checkpass=$("#check_password").val();
+            if(registerpass!==checkpass){
+              layer.msg('两次输入的密码不一致',function () {})
+            }
+            else{
+              var identity = $("input[type='radio']:checked").val();
+              console.log(identity);
+              var data;
+              if (identity == "4"){
+                data="login_name="+registername+"$^@^$passwd="+registerpass+"$^@^$classification="+identity+ "$^@^$name=游客$^@^$phonenumber=0"+"$^@^$email=example@163.com"+
+                    "$^@^$gender=male"+"$^@^$depart_id=null";
+              }else {
+                data="login_name="+registername+"$^@^$passwd="+registerpass+"$^@^$classification="+identity+ "$^@^$name="+registername+"$^@^$phonenumber=0"+"$^@^$email=example@163.com"+
+                    "$^@^$gender=male"+"$^@^$depart_id=null";
+              }
+              var obj_addUser = new Array();
+              var processResult_addUser = function(){
+                console.log(obj_addUser);
+                if(obj_addUser[0] == "ok"){
+                  //添加用户成功
+                  layer.msg('注册成功',function () {
+                    //用注册的用户进行登录
+                    var processResult_login = function (results){
+                      console.log(results);
+                      sessionStorage.setItem('userId',results[0]);
+                      sessionStorage.setItem('userToken',results[1]);
+                      sessionStorage.setItem('classification',results[2]);
+                      sessionStorage.setItem('loginName',results[3]);
+
+                      //获取用户名和id
+                      var obj_user = new Array();
+                      var processResult_getUser = function() {
+                        console.log(obj_user);
+                        sessionStorage.setItem("id",obj_user[0]);
+                        sessionStorage.setItem("name",obj_user[1].replace(/\s/g,""));
+                      };
+                      getFromWS("home/sie_web/articleComment/getUser.template","login_name="+results[3],obj_user,processResult_getUser);
+
+                      var hrefPage = sessionStorage.getItem("hrefPage");
+                      // alert(hrefPage);
+                      window.location = hrefPage;
+                    };
+                    login(registername,registerpass,processResult_login);
+                  })
+                }
+                else{
+                  //添加用户失败
+                  layer.msg('注册失败',function () {})
+                }
+              };
+              getFromWS("home/sie_web/userManage/addUser.template",data,obj_addUser,processResult_addUser);
+            }
+          }
+          else {
+            layer.msg('登录名重复，请修改登录名',function() {});
+          }
+            return false;
+        }
+        )
+      })
+    </script>
+</head>
+
+<body>
+
+
+<div class="container" id="container">
+    <div class="form-container sign-up-container">
+        <form method="post" role="form" id="register">
+            <h1>注册</h1>
+            <!--<div class="social-container">-->
+                <!--<a href="#" class="social"><i class="fa fa-qq"></i></a>-->
+                <!--<a href="#" class="social"><i class="fa fa-wechat"></i></a>-->
+                <!--<a href="#" class="social"><i class="fa fa-weibo"></i></a>-->
+            <!--</div>-->
+            <!--<span>第三方账号注册</span>-->
+            <!--选择注册人的身份-->
+            <div class="identity-select">
+                <div class="identity" id="identityChoose">
+                    <input name="identity" type="radio" value="2" style="height: 15px;width: 15px;margin-right: 10px" />
+                    学生
+                </div>
+                <div class="identity">
+                    <input name="identity" type="radio" value="3" style="height: 15px;width: 15px;margin-right: 10px" />
+                    教师
+                </div>
+                <!--<div class="identity">-->
+                    <!--<input name="identity" type="radio" value="4" style="height: 15px;width: 15px;margin-right: 10px" />-->
+                    <!--游客-->
+                <!--</div>-->
+            </div>
+            <input type="text" placeholder="用户名" onkeyup="value=value.replace(/[\u4e00-\u9fa5]/ig,'')" name="username" id="register_username" onchange="checkRepeat()"/>
+            <input type="text" placeholder="密码" name="password" id="register_password" onfocus="this.type='password'"/>
+            <input type="text" placeholder="确认密码" name="check_password" id="check_password" onfocus="this.type='password'"/>
+            <button type="submit">注册</button>
+
+        </form>
+    </div>
+    <div class="form-container sign-in-container">
+        <form method="post" role="form" id="login">
+            <h1>登录</h1>
+            <!--<div class="social-container">-->
+                <!--<a href="#" class="social"><i class="fa fa-qq"></i></a>-->
+                <!--<a href="#" class="social"><i class="fa fa-wechat"></i></a>-->
+                <!--<a href="#" class="social"><i class="fa fa-weibo"></i></a>-->
+            <!--</div>-->
+            <!--<span>第三方账号登录</span>-->
+            <input type="text" placeholder="用户名" onkeyup="value=value.replace(/[\u4e00-\u9fa5]/ig,'')" name="username" id="username"/>
+            <input type="password" placeholder="密码" name="password" id="password"/>
+            <a href="#">忘记密码？</a>
+            <button type="submit">登录</button>
+        </form>
+    </div>
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-panel overlay-left">
+                <h2>How happy we are, To meet friends from afar!</h2>
+                <p>输入您的个人信息进行登录。</p>
+                <button class="ghost" id="signIn">登录</button>
+            </div>
+            <div class="overlay-panel overlay-right">
+                <h2>How happy we are, To meet friends from afar!</h2>
+                <p>输入您的个人信息进行注册。</p>
+                <button class="ghost" id="signUp">注册</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+
+</footer>
+
+<script src="js/register.js"></script>
+</body>
+</html>

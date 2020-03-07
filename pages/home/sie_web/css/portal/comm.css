@@ -1,0 +1,11 @@
+/*
+*通用样式、引入字体等
+*陈家强
+*20190405
+*
+*/
+
+@font-face{
+    font-family: 'HYSongYunLangHeiW';
+    src : url('../../fonts/HYSongYunLangHeiW.ttf');
+}

@@ -1,0 +1,23 @@
+<%
+    /// 文 件 名：addDepartment
+    /// 描    述：添加机构(用一句话描述该文件做什么)  
+    /// 项目名称：sie_web      
+    /// 作    者：武汉大学国家网络安全学院@沈家强    
+    /// 发布日期：2019/5/24 9:00  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+
+<%
+  debugMsg("[DEBUGMSG]:addDepartment.template 位置:14:"+"当前新建节点的名称="+:depart_name+"=排序="+:sort+"=父机构="+:pid)
+  ///获取新建机构的ID
+  :sql_get_id = "SELECT max(id)+1 as maxid FROM st_depart_map"
+  :resultRecord_get_id = changeRecordSet(:sql_get_id)
+///  debugMsg("[DEBUGMSG]:addDepartment.template 位置:27:"+"resultRecord_get_id"+:resultRecord_get_id+"=maxid="+maxid)
+  :sql_add_depart = "INSERT INTO st_depart_map values(?,?,?,?)"
+  :resultRecord_add = execSQL(:sql_add_depart,S(maxid),S(:pid),S(:sort),S(:depart_name))
+///  debugMsg("[DEBUGMSG]:addDepartment.template 位置:30:"+"resultRecord_add"+:resultRecord_add)
+  =:resultRecord_add
+%>

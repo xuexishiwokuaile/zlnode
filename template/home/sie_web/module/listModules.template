@@ -1,0 +1,43 @@
+<%
+    /// 文 件 名：listModules
+    /// 描    述：列出所有当前角色允许查看对应的模块(用一句话描述该文件做什么)  
+    /// 项目名称：cardiac      
+    /// 作    者：武汉大学国家网络安全学院@沈家强    
+    /// 发布日期：2019/8/20 0020 20:50  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+
+    //////////////////////////////////////////////主页模块//////////////////////////////////////////////////////////////////////
+    :select_classification = ","+:classification+","
+
+    debugMsg(:classification,"show_time")
+
+    :sql_first_level_module = "SELECT * FROM  module_manage WHERE classification_id LIKE ?"///搜索主目录下的模块
+    :result_records_first_level = changeRecordSet(:sql_first_level_module,S("%"+:select_classification+"%"))
+    :i = 0
+     Repeat
+      :ArrayName[:i] = name
+      :ArrayParentId[:i] = parent_id
+      :ArrayId[:i] = id
+      :ArrayUrl[:i] = url
+      :ArraySort[:i] = sort
+      :ArrayIco[:i] = icon
+      :i=:i+1
+    EndRepeat
+    :j = 0
+    :record_Item=""
+    :record_Array = ""
+    While :j<:i
+      :record_item = jsonAddItem(:record_item,"moduleTitle",S(:ArrayName[:j]))
+      :record_item = jsonAddItem(:record_item,"pid",S(:ArrayParentId[:j]))
+      :record_item = jsonAddItem(:record_item,"id",S(:ArrayId[:j]))
+      :record_item = jsonAddItem(:record_item,"moduleSort",S(:ArraySort[:j]))
+      :record_item = jsonAddItem(:record_item,"url",S(:ArrayUrl[:j]))
+      :record_item = jsonAddItem(:record_item,"moduleIcoClass",S(:ArrayIco[:j]))
+      :record_Array = jsonAddArrayItem(:record_Array,:record_item)
+      :j =:j+1
+    EndWhile
+     Exit :record_Array
+%>

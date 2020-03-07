@@ -1,0 +1,75 @@
+/* 用户中心自定义样式 */
+.fly-panel-user{
+	padding-top: 15px!important;
+}
+
+
+/* 我的消息-翻页 */
+.page{
+	display: flex;
+	justify-content: center;
+}
+.page div{
+	margin: 0 10px 0 10px;
+}
+
+
+
+/* 新建文章 */
+.column-select .layui-form-label{
+	width: 110px;
+    padding: 8px 15px;
+    height: 38px;
+    line-height: 20px;
+    border-width: 1px;
+    border-style: solid;
+	border-color: #e6e6e6;
+    border-radius: 2px 0 0 2px;
+    text-align: center;
+    background-color: #FBFBFB;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+.column-title{
+	padding: 10px 20px;
+}
+.layui-textarea-outer{
+	padding: 0 20px;
+}
+.layui-textarea-btn{
+	padding: 10px 0 0 20px;
+}
+
+/* 我的关注 */
+.my-attention{
+	min-height: 602px!important;
+	position: relative;
+}
+.my-attention-items{
+	display: flex!important;
+	justify-content: flex-start;
+	flex-wrap: wrap;
+}
+.my-attention-item{
+	border: 1px solid #e6e6e6;
+	width: 200px;
+	text-align: center;
+	padding: 10px 0;
+	margin: 0 20px 10px 0;
+	height: 224px;
+}
+.my-attention-item img {
+    width: 60px;
+    height: 60px;
+    border-radius: 100%;
+}
+.my-attention-item h1{
+	font-size: 18px;
+	margin: 8px 0 0 8px;
+	height: 30px;
+}
+.my-attention-page{
+	position: absolute;
+	bottom: 10px;
+	left: 36%;
+}

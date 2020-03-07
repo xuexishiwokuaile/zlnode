@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Head -->
+<head>
+    <title>课程列表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta name="keywords" content="" />
+
+    <!-- default css files -->
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" media="all">
+    <link rel="stylesheet" href="../css/style.css" type="text/css" media="all">
+    <link rel="stylesheet" href="../css/font-awesome.min.css" />
+    <!-- default css files -->
+    <!-- 主页css -->
+    <link rel="stylesheet" type="text/css" href="../css/index.css" />
+    <link rel="stylesheet" type="text/css" href="../css/mooc.css" />
+    <!-- 通用css -->
+    <link rel="stylesheet" type="text/css" href="../css/newsList.css" />
+    <link rel="stylesheet" type="text/css" href="../css/lhcommon.css" />
+
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/swiper-3.4.2.jquery.min.js"></script>
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+
+    <!-- scrolling script -->
+    <script type="text/javascript">
+      jQuery(document).ready(function($) {
+        $(".scroll").click(function(event) {
+          event.preventDefault();
+          $('html,body').animate({
+            scrollTop: $(this.hash).offset().top
+          }, 1000);
+        });
+
+        // 获取课程id和课程信息并设置页面title
+        var courseId = Request("courseId");
+        var obj_getCourseInfo = new Array();
+        var processResult_getCourseInfo = function() {
+          var courseInfo = JSON.parse(obj_getCourseInfo[0]);
+          console.log(courseInfo);
+          sessionStorage.setItem("courseInfo",courseInfo);
+          $("title").html(courseInfo.name+"|课程列表");
+          $("#coursePath").html(courseInfo.name);
+          $("#courseCoverPicture").attr('src','/one/downloadFile.spe?dtype=PostgresXL&mode=html&fileid='+courseInfo.pic_id);
+          $("#courseTitle").html(courseInfo.name);
+          $("#view-num").html("浏览数  "+courseInfo.view_num);
+        };
+        getFromWS("home/sie_web/courseManage/getCourseInfo.template","id="+courseId,obj_getCourseInfo,processResult_getCourseInfo);
+        $("#instruction").click();
+      });
+
+      // 获取课程id
+      function Request(strName){
+        var strHref = location.href;
+        var intPos = strHref.indexOf("?");
+        var strRight = strHref.substr(intPos + 1);
+        var arrTmp = strRight.split("&");
+        for(var i = 0; i < arrTmp.length; i++) {
+          var arrTemp = arrTmp[i].split("=");
+          if(arrTemp[0].toUpperCase() == strName.toUpperCase()){
+            return arrTemp[1];
+          }
+        }
+        return "";
+      }
+
+      $(function() {
+
+        //验证登录状态
+        let userName = sessionStorage.getItem("loginName");
+        let userToken = sessionStorage.getItem("userToken");
+        let userId = sessionStorage.getItem("userId");
+        let classification = sessionStorage.getItem("classification");
+
+        let objCheckLogin = new Array();
+        var checkLoginResult = function() {
+          var hrefPage = window.location.href;
+          console.log(objCheckLogin);
+          console.log("用户状态："+objCheckLogin[0]);
+          if(objCheckLogin[0]=="bad" || objCheckLogin[0]=="failed"||userName==null||userToken==null||userName==" "||userToken==" "){
+            sessionStorage.setItem('userId'," ");
+            sessionStorage.setItem('userToken'," ");
+            sessionStorage.setItem('classification'," ");
+            sessionStorage.setItem('loginName'," ");
+            sessionStorage.setItem("hrefPage",hrefPage);
+            $(".rigster a").text("注册");
+            $(".login a").text("登录");
+            $(".login a").attr("href","../login.html");
+            // window.location.reload();
+          }else{
+            var name = sessionStorage.getItem("name");
+            console.log(name);
+            // 登录状态有效
+            if (userToken != null){
+              $(".rigster a").text("退出");
+              $(".rigster a").attr("href",hrefPage);
+              $(".rigster a").click(function() {
+                sessionStorage.setItem('userId'," ");
+                sessionStorage.setItem('userToken'," ");
+                sessionStorage.setItem('classification'," ");
+                sessionStorage.setItem('loginName'," ");
+                sessionStorage.setItem("id","");
+                sessionStorage.setItem("name","");
+                sessionStorage.setItem("hrefPage",hrefPage);
+              });
+              $(".login a").attr("href","/pages/home/sie_web/personalCenter/home.html");
+              $(".login a").text(name);
+            }
+          }
+        };
+        getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+        //获取顶部菜单栏
+        let topMenu = new Array();
+        let topMenuResult = function(){
+          // console.log(topMenu[0]);
+          if(topMenu[0] != "bad"){
+            let menusArray = JSON.parse(topMenu[0]);
+            for(let i=0;i<menusArray.length;i++){
+              if(menusArray[i].name == "课程"){
+                $(".top-menu").append(`
+                        <li class="active"><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+              }else{
+                $(".top-menu").append(`
+                        <li><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+              }
+            }
+          }
+        };
+        getFromWS("home/sie_web/menu/getTopMenu.template","",topMenu,topMenuResult);
+
+        //获取初始数据
+      })
+    </script>
+    <!-- //scrolling script -->
+</head>
+<!-- Body -->
+<body>
+<div class="banner">
+    <div class="header-top">
+        <div class="header-outer">
+            <div class="header-top-left">
+                <a href="../index.html" class="header-logo"><img src="../images/logo.png"></a>
+                <span class="language">中文</span><span class="language">ENGLISH</span>
+            </div>
+            <div class="header-top-right">
+                <div>
+                    <p class="header-email-tel"><i class="fa fa-envelope" aria-hidden="true"></i><a href="mailto:liuyan@whu.edu.cn">LIUYAN@WHU.EDU.CN</a></p>
+                    <p class="header-email-tel"><i class="fa fa-phone" aria-hidden="true"></i> +86 8765 8888</p>
+                </div>
+                <div class="login-rigster">
+                    <div class="login">
+                        <a href="../login.html">登录</a>
+                    </div>
+                    <div class="rigster">
+                        <a href="../login.html">注册</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="head">
+        <div class="container">
+            <div class="navbar-top">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <div class="navbar-brand logo">
+                        <a href="../index.html" class="header-title">汉语国际推广教学资源研究与开发基地</a>
+                    </div>
+                </div>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav link-effect-4 top-menu">
+                    </ul>
+                </div>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+    <!-- </div> -->
+    <!-- //banner -->
+    <div class="content">
+
+        <div class="main_container">
+            <div class="course-title">
+                <span><a style="color: #999" href="/pages/home/sie_web/mooc/showCourseList.html">课程列表 \</a></span>
+                <span id="coursePath"></span>
+            </div>
+            <div class="course-box">
+                <div class="image-area">
+                    <img id="courseCoverPicture" src="" alt="">
+                </div>
+                <div class="text-area">
+                    <div id="courseTitle" style="font-size: 24px"></div>
+                    <div id="view-num" style="font-size: 14px;margin-top: 10px"></div>
+                    <div id="course-time" style="color: #999;font-size: 14px;margin-top: 10px">开课时间：2019-05-01~ 2020-05-17</div>
+                    <button class="study-course">开始学习</button>
+                </div>
+            </div>
+            <div class="course-instruction">
+                <div class="left-side">
+                    <ul class="course-nav">
+                        <li name="courseInstruction" id="instruction" class="course-item choose">课程介绍</li>
+                        <li name="courseInstruction" id="directory" class="course-item">课程目录</li>
+                        <li name="courseInstruction" id="comment" class="course-item">课程评论</li>
+                        <li name="courseInstruction" id="note" class="course-item">课程笔记</li>
+                    </ul>
+                    <div class="item-content" id="itemContent"></div>
+                    <script>
+                        $('li[name="courseInstruction"]').click(function() {
+                          $('li[name="courseInstruction"]').removeClass('choose');
+                          $(this).addClass('choose');
+                          var courseInfo = JSON.parse(sessionStorage.getItem('courseInfo'));
+                          console.log(courseInfo);
+                          var itemName = $(this).attr('id');
+                          switch (itemName) {
+                            case 'instruction':
+                              console.log(itemName);
+                              $("#itemContent").html('<div class="content-title">详情</div>' +
+                                  '<div id="content" class="detail-content">'+courseInfo.instruction+'</div>');
+                              break;
+                            case 'directory':
+                              console.log(itemName);
+                              $("#itemContent").html('<div class="content-title">课程目录</div>' +
+                                  '<div id="content" class="detail-content"></div>');
+                              break;
+                            case 'comment':
+                              console.log(itemName);
+                              $("#itemContent").html('');
+                              break;
+                            case 'note':
+                              console.log(itemName);
+                              $("#itemContent").html('');
+                              break;
+                          }
+                        });
+                    </script>
+                </div>
+                <div class="right-side"></div>
+            </div>
+        </div>
+
+        <script>
+          $('a[name="courseCategory"]').click(function() {
+            var id =  $(this).attr('id');
+            $('a[name="courseCategory"]').removeClass('current');
+            $(this).addClass('current');
+          });
+        </script>
+
+        <!-- copyright -->
+        <div class="copyright links">
+            <div class="container">
+                <div class="copyrightbottom links-outer">
+                    <div class="links-title">
+                        友情链接
+                    </div>
+                    <div class="links-items">
+                        <div class="links-item">
+                            <a href="#">汉语国际推广研究所</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">汉语国际推广新师资培养基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">国际汉学家研修基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">汉语国际推广多语种基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">国际汉语教学研究基地</a>
+                        </div>
+                    </div>
+                    <div class="links-items">
+                        <div class="links-item">
+                            <a href="#">中华传统文化研究与体验基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">汉语国际推广南方基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">国际汉语教师研修基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">国际汉语教材研发与培训基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">国际汉语传播湖南基地</a>
+                        </div>
+                    </div>
+                    <div class="links-items">
+                        <div class="links-item">
+                            <a href="#">国际商务汉语教学与资源开发基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">国际商务汉语教学与资源开发基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">汉语国际推广东北基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">汉语国际推广多语种大连基地</a>
+                        </div>
+                        <div class="links-item">
+                            <a href="#">东南亚汉语推广师资培训基地</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+        <!-- //copyright -->
+        <!-- copyright -->
+        <div class="copyright">
+            <div class="footer">
+                <div class="technical-support">
+                    武汉大学国家网络安全学院技术支持
+                </div>
+                <div class="organizer">
+                    主办单位：汉语国际推广教学资源研究与开发基地 武汉大学国际教育学院
+                </div>
+                <div class="technical-support">
+                    2019@ 技术支持：027-68777156 SHENJIAQIANG@WHU.EDU.CN
+                </div>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+        <!-- //copyright -->
+    </div>
+</div>
+
+</body>
+<!-- //Body -->
+</html>

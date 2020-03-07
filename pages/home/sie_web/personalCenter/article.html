@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>我的文章</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="fly,layui,前端社区">
+    <meta name="description" content="Fly社区是模块化前端UI框架Layui的官网社区，致力于为web开发提供强劲动力">
+    <link rel="stylesheet" href="../css/layui/css/layui.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <script src="https://cdn.bootcss.com/jquery/3.4.0/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../css/layui/jquery.ztree.core.js"></script>
+    <link rel="stylesheet" href="../css/bootstrapStyle/bootstrapStyle.css">
+
+    <link rel="stylesheet" type="text/css" href="../css/index.css" />
+    <link rel="stylesheet" type="text/css" href="../css/comm.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+
+    <link rel="stylesheet" type="text/css" href="../css/article.css" />
+
+    <!--文本编辑器js-->
+    <script type="text/javascript" charset="utf-8" src="../js/wangEditor/wangEditor.js"></script>
+    <!--jQuery以及zoolina-->
+    <script src="../js/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+    <script type="text/javascript" src="../js/uploadFile.js"></script>
+    <!--<script type="text/javascript" src="/Scripts/uploadfile.js"></script>-->
+<!--    <script type="text/javascript" src="/Scripts/StationJSLib-bak.js"></script>-->
+<!--    <script type="text/javascript" src="/Scripts/StationJSLib-kindeditor.js"></script>-->
+</head>
+<body style="margin: 0;">
+<script>
+  //定义多个文本编辑器
+  var E = window.wangEditor;
+  var articleEditor = new E('#articleEditor');//新建文章
+  var modifyEditor = new E('#modifyEditor');//修改文章
+  var content = new E('#content');//审核时查看文章内容
+  var reviewResult = new E('#reviewResult');//审核结果
+
+  // 重载列表
+  function reloadTable() {
+    layui.use('table', function() {
+      var table = layui.table;
+      table.reload('test', {
+        url: '/home/sie_web/articleManage/listArticle.template',
+        where: {
+          status: '',
+          userName: sessionStorage.getItem('name'),
+          classification: sessionStorage.getItem('classification'),
+        },
+        page: {
+          curr: 1, //重新从第 1 页开始
+        },
+      });
+    });
+  }
+
+  $(function() {
+    let userName = sessionStorage.getItem("loginName");
+    let userToken = sessionStorage.getItem("userToken");
+    let userId = sessionStorage.getItem("userId");
+    console.log(userToken == null);
+    let classification = sessionStorage.getItem("classification");
+
+    let objCheckLogin = new Array();
+    var checkLoginResult = function() {
+      console.log(objCheckLogin);
+      console.log("用户状态："+objCheckLogin[0]);
+      if (objCheckLogin[0] == 'bad' || objCheckLogin[0] == 'failed' || userName == null || userToken == null || userName == ' ' || userToken == ' ') {
+        sessionStorage.setItem('userId', ' ');
+        sessionStorage.setItem('userToken', ' ');
+        sessionStorage.setItem('classification', ' ');
+        sessionStorage.setItem('loginName', ' ');
+        var hrefPage = '/pages/home/sie_web/personalCenter/article.html';
+        console.log(hrefPage);
+        sessionStorage.setItem('hrefPage', hrefPage);
+        $('.rigster a').text('注册');
+        $('.login a').text('登录');
+        $('.login a').attr('href', 'login.html');
+      }else{
+        var name = sessionStorage.getItem("name");
+        console.log(name);
+        // 登录状态有效
+        if (userToken != null) {
+          $('.rigster a').text('退出');
+          $('.rigster a').attr('href', '/pages/home/sie_web/index.html');
+          $('.rigster a').click(function() {
+            sessionStorage.setItem('userId', ' ');
+            sessionStorage.setItem('userToken', ' ');
+            sessionStorage.setItem('classification', ' ');
+            sessionStorage.setItem('loginName', ' ');
+            sessionStorage.setItem('id', '');
+            sessionStorage.setItem('name', '');
+            var hrefPage = '/pages/home/sie_web/personalCenter/article.html';
+            console.log(hrefPage);
+            sessionStorage.setItem('hrefPage', hrefPage);
+          });
+          $('.login a').attr('href', '/pages/home/sie_web/personalCenter/home.html');
+          $('.login a').text(name);
+        }
+      }
+    };
+    getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+    // 加载文本编辑器
+    //新建文章
+    setUploadImg(articleEditor);
+    articleEditor.create();
+    //修改文章
+    modifyEditor.create();
+    // 审核文章，不允许编辑且隐藏工具栏
+    content.create();
+    reviewResult.create();
+  });
+    
+    //自定义图片上传方法
+    function setUploadImg(editor) {
+      editor.customConfig.customUploadImg = function(files,insert) {
+        console.log(files);
+        for (var i = 0; i < files.length; i++) {
+          var processResult_uploadImg = function(picId){
+            var imgUrl = "/one/downloadFile.spe?dtype=PostgresXL&mode=html&fileid="+picId;
+            console.log(imgUrl);
+            var img = '<img src="'+imgUrl+'"></img>';
+            editor.txt.append(img);
+          };
+          uploadToDatabase(files[i],processResult_uploadImg,"databaseType=Sqldb")
+        }
+      }
+    }
+
+</script>
+<div class="main_container">
+    <div class="layui-container fly-marginTop fly-user-main">
+        <div class="fly-panel" style="margin: 0 0 30px 0;" pad20>
+            <table class="layui-hide" id="test" lay-filter="test"></table>
+
+            <script type="text/html" id="toolbarDemo">
+                <div class="layui-btn-container">
+                    <button class="layui-btn layui-btn-sm" lay-event="new">新建文章</button>
+                    <button class="layui-btn layui-btn-sm" lay-event="all">查看所有文章</button>
+                    <button class="layui-btn layui-btn-sm" style="background-color: green" lay-event="statusYes">查看所有已发布文章</button>
+                    <button class="layui-btn layui-btn-sm" style="background-color: red" lay-event="statusNo">查看所有审核未通过的文章</button>
+                    <button class="layui-btn layui-btn-sm" style="background-color: orange" lay-event="statusUnknown">查看所有未审核的文章</button>
+                </div>
+            </script>
+
+            <script src="../css/layui/layui.js"></script>
+
+            <script>
+              layui.use('table', function() {
+                var table = layui.table;
+                table.render({
+                  elem: '#test',
+                  url: '/home/sie_web/articleManage/listArticle.template',
+                  where:{
+                    status: '',
+                    userName:sessionStorage.getItem("name"),
+                    classification:sessionStorage.getItem("classification")
+                  },
+                  limit:20,
+                  toolbar: '#toolbarDemo',
+                  cols: [
+                    [
+                      {type: 'checkbox', fixed: 'left'},
+                      {field: 'id', title: '文章ID', sort: true},
+                      {field: 'title', title: '标题'},
+                      {field: 'articleType', title: '栏目', width: 100, sort: true,templet: '#articleType'},
+                      {field: 'status', title: '状态', width: 100, sort: true,templet: '#articleStatus'},
+                      {field: 'publicTime', title: '发布时间', sort: true, width: 170},
+                      {fixed: 'right', title: '操作',width:170,templet:'#tool'}
+                    ]
+                  ],
+                  page: true
+                });
+
+                //头工具栏事件
+                table.on('toolbar(test)', function(obj) {
+                  console.log(obj);
+                  var checkStatus = table.checkStatus(obj.config.id);
+                  switch (obj.event) {
+                    case 'new':
+                      $("#articleTitle").val("");
+                      $("#articlePublisher").val("");
+                      $("#pictureName").html("");
+                      $("#coverPicture").val("");
+                      layer.open({
+                        type: 1,
+                        area:['75%','75%'],
+                        title: '新建文章',
+                        content: $('#newArticle')
+                      });
+                      break;
+                    case 'all':
+                      reloadTable();
+                      break;
+                    case 'statusYes':
+                      layui.use('table', function() {
+                        var table = layui.table;
+                        table.reload('test', {
+                          url: '/home/sie_web/articleManage/listArticle.template',
+                          where: {
+                            status: '1',
+                            userName: sessionStorage.getItem('name'),
+                            classification: sessionStorage.getItem('classification'),
+                          },
+                          page: {
+                            curr: 1, //重新从第 1 页开始
+                          },
+                        });
+                      });
+                      break;
+                    case 'statusNo':
+                      layui.use('table', function() {
+                        var table = layui.table;
+                        table.reload('test', {
+                          url: '/home/sie_web/articleManage/listArticle.template',
+                          where: {
+                            status: '-1',
+                            userName: sessionStorage.getItem('name'),
+                            classification: sessionStorage.getItem('classification'),
+                          },
+                          page: {
+                            curr: 1, //重新从第 1 页开始
+                          },
+                        });
+                      });
+                      break;
+                    case 'statusUnknown':
+                      layui.use('table', function() {
+                        var table = layui.table;
+                        table.reload('test', {
+                          url: '/home/sie_web/articleManage/listArticle.template',
+                          where: {
+                            status: '0',
+                            userName: sessionStorage.getItem('name'),
+                            classification: sessionStorage.getItem('classification'),
+                          },
+                          page: {
+                            curr: 1, //重新从第 1 页开始
+                          },
+                        });
+                      });
+                      break;
+                  }
+                });
+
+                //监听行工具事件
+                table.on('tool(test)', function(obj){
+                  var E = window.wangEditor;
+                  var data = obj.data;
+                  if(obj.event === 'del'){
+                    console.log(data.reason);
+                    layer.confirm('真的要删除这篇文章吗？', {
+                      btn: ['还是算了','残忍删除'] //按钮
+                    }, function(){
+                      layer.msg('真好', {icon: 6});
+                    }, function(){
+                      obj.del();
+                      layer.msg('已经删除了哦', function() {})
+                    });
+                  } else if(obj.event === 'modify'){
+                    sessionStorage.setItem("articleId",data.id);
+                    console.log(data.content);
+                    $("#modifyTitle").val(data.title);
+                    $("#modifyTitle").attr('title',data.title);
+                    $("#modifyPublisher").val(data.publisher);
+                    $("#previewPic").attr("src","/one/downloadFile.spe?dtype=PostgresXL&mode=html&fileid="+data.picID);
+                    $("li[name='articleType']").each(function() {
+                      var type = $(this).attr("type");
+                      if (type == data.articleType){
+                        $(this).css({"background-color":"grey","color":"white"});
+                        $(this).attr("isChoose","true");
+                      }
+                      else {
+                        $(this).css({"background-color":"white","color":"black"});
+                        $(this).attr("isChoose","false");
+                      }
+                    });
+                    var modifyEditor = new E('#modifyEditor');
+                    modifyEditor.create();
+                    modifyEditor.txt.html(data.content);
+                    layer.open({
+                      type: 1,
+                      area:['75%','75%'],
+                      title: '编辑文章 （文章ID为：'+data.id+'）',
+                      content: $('#modifyArticle')
+                    })
+                  }else if(obj.event === 'review'){
+                    sessionStorage.setItem("articleId",data.id);
+                    if (data.status == '1') {
+                     layer.msg("该文章已经审核过了",function() {});
+                      return false;
+                    }else if (data.status == '0') {
+                      $("#statusUnknown").attr("style","display:block");
+                      $("#statusNo").attr("style","display:none");
+                    }else if (data.status == '-1') {
+                      $("#statusUnknown").attr("style","display:none");
+                      $("#statusNo").attr("style","display:block");
+                    }
+                    $("#title").val(data.title);
+                    $("#title").attr('title',data.title);
+                    $("#publisher").val(data.publisher);
+                    $("#picture").attr("src","/one/downloadFile.spe?dtype=PostgresXL&mode=html&fileid="+data.picID);
+                    $("li[name='articleType']").each(function() {
+                      var type = $(this).attr("type");
+                      if (type == data.articleType){
+                        $(this).css({"background-color":"grey","color":"white"});
+                        $(this).attr("isChoose","true");
+                      }
+                      else {
+                        $(this).css({"background-color":"white","color":"black"});
+                        $(this).attr("isChoose","false");
+                      }
+                    });
+                    var reviewEditor = new E('#content');
+                    reviewEditor.create();
+                    reviewEditor.txt.html(data.content);
+                    layer.open({
+                      type: 1,
+                      area:['75%','75%'],
+                      title: '文章审核  （文章ID为：'+data.id+'）',
+                      content: $('#reviewArticle')
+                    })
+                  }
+                });
+              });
+            </script>
+
+            <script type="text/html" id="articleType">
+                {{# if(d.articleType == 1){ }}
+                <div>{{ "教学活动" }}</div>
+                {{# }else if(d.articleType == 2){ }}
+                <div>{{ "政策公告" }}</div>
+                {{# }else if(d.articleType == 3){ }}
+                <div>{{ "文化交流" }}</div>
+                {{# }else if(d.articleType == 4){ }}
+                <div>{{ "其他新闻" }}</div>
+                {{# } }}
+            </script>
+            <script type="text/html" id="articleStatus">
+                {{# if(d.status == -1){ }}
+                <div class="statusNoPass" style="color: red;" title="点击查看原因" onclick="showReason('{{d.reason}}')">{{ "审核未通过" }}</div>
+                {{# }else if(d.status == 0){ }}
+                <div style="color: orange;">{{ "待审核" }}</div>
+                {{# }else if(d.status == 1){ }}
+                <div style="color: green;">{{ "已发布" }}</div>
+                {{# } }}
+            </script>
+            <script>
+                function showReason(reason) {
+                  layer.alert(reason);
+                }
+            </script>
+            <script type="text/html" id="tool">
+                {{# if(sessionStorage.getItem('classification') == 1){ }}
+                <a class="layui-btn layui-btn-xs" lay-event="modify">编辑</a>
+                <a class="layui-btn layui-btn-xs" lay-event="review">审核</a>
+                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                {{# }else{ }}
+                <a class="layui-btn layui-btn-xs" lay-event="modify">编辑</a>
+                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                {{# } }}
+            </script>
+        </div>
+    </div>
+</div>
+
+</body>
+<!--新建文章页面-->
+<div class="newArticle" id="newArticle" style="display: none">
+    <div class="articleHeader">
+        <div class="textArea">
+            <div class="articleTitle">文章标题：
+                <input type="text" class="textInput" placeholder="文章标题" id="articleTitle">
+            </div>
+            <div class="articlePublisher">文章作者：
+                <input type="text" class="textInput" placeholder="文章作者" id="articlePublisher">
+                <div class="titleMark">（若不填写文章作者默认为当前登录用户）</div>
+            </div>
+            <ul class="articleType" id="articleTypeChoose">文章类型：
+                <li name="chooseType" id="1" class="typeItem" style="background: grey;color: white" isChoose="true">教学活动</li>
+                <li name="chooseType" id="2" class="typeItem" isChoose="false">政策公告</li>
+                <li name="chooseType" id="3" class="typeItem" isChoose="false">文化交流</li>
+                <li name="chooseType" id="4" class="typeItem" isChoose="false">其他新闻</li>
+            </ul>
+            <div class="coverPictures">
+                <label class="lineTitle">文章封面：</label>
+                <div class="choosePicture">
+                    <button id="selectPicture">选择图片</button>
+                    <label class="pictureName" id="pictureName"></label>
+                    <input type="file" id="coverPicture" style="display: none" onchange="selectPicture()">
+                    <button id="uploadPicture">上传封面</button>
+                </div>
+            </div>
+        </div>
+        <div class="imageArea">
+            封面图片预览（上传之后自动生成）
+            <img src="../images/cover-picture.png" alt="" id="previewPicture" picId="">
+        </div>
+    </div>
+    <div class="articleEditor" id="articleEditor"></div>
+    <div class="button-box">
+        <div class="block"></div>
+        <button class="submit" id="submitArticle">提交</button>
+        <button class="return" onclick="layer.closeAll()">返回</button>
+    </div>
+</div>
+
+<script>
+    //选择图片
+    $("#selectPicture").click(function() {
+      $("#coverPicture").click();
+    });
+
+    function selectPicture(){
+      var filePath = $("#coverPicture").val();
+      var pos = filePath.lastIndexOf("\\");
+      var fileName = filePath.substring(pos+1);
+      $("#pictureName").html(fileName);
+    }
+
+    $("#uploadPicture").click(function() {
+      if ($("#coverPicture").val() == ""){
+        layer.msg("未选择封面图片",function() {});
+        return false;
+      }
+      var processResult_uploadPic = function(picId){
+        layer.msg("上传成功",function() {});
+        $("#previewPicture").attr("src","/one/downloadFile.spe?dtype=PostgresXL&mode=html&fileid="+picId);
+        $("#previewPicture").attr("picId",picId);
+      };
+
+      var filePath = $("#coverPicture").val();
+      console.log(filePath);
+      var point = filePath.split('.');
+      var type = point[1];
+      console.log(type);
+      var files = document.getElementById("coverPicture").files;
+      console.log(files);
+
+      uploadToDatabase("coverPicture",processResult_uploadPic,'databaseType=Sqldb');
+    });
+
+    // 文章类型选择
+    $(".typeItem").click(function() {
+      $(this).css({"background-color":"grey","color":"white"});
+      $(this).attr("isChoose","true");
+      var id = $(this).attr("id");
+      $("li[name='chooseType']").each(function() {
+        var ID = $(this).attr("id");
+        if (ID != id){
+          $(this).css({"background-color":"white","color":"black"});
+          $(this).attr("isChoose","false");
+        }
+      })
+    });
+
+    // 提交文章
+    $("#submitArticle").click(function() {
+      var articleTitle = $("#articleTitle").val();
+      if (articleTitle == ''){
+        layer.msg("文章标题不能为空",function() {});
+        return false;
+      }
+      var articlePublisher = $("#articlePublisher").val();
+      if (articlePublisher == '') {
+        articlePublisher = sessionStorage.getItem("name");
+      }
+      var articleContent = articleEditor.txt.html();
+      var articleSummary = articleEditor.txt.text();
+      if (articleSummary == ''){
+        layer.msg("文章内容不能为空",function() {});
+        return false;
+      }
+      var picId = $("#previewPicture").attr("picId");
+      if (picId == ""){
+        picId = "2019235695360001001";
+      }
+      //获取文章类型
+      var type = 1;
+      $("li[name='chooseType']").each(function() {
+        var checked = $(this).attr("isChoose");
+        if (checked == "true"){
+          type =  $(this).attr("id");
+        }
+      });
+      // 获取当前时间
+      var date = new Date();
+      var year = date.getFullYear();
+      var month = date.getMonth()+1;
+      if (month < 10){
+        month = "0" + month;
+      }
+      var day = date.getDate();
+      if (day < 10){
+        day = "0" + day;
+      }
+      var hours = date.getHours();
+      if (hours < 10){
+        hours = "0" + hours;
+      }
+      var minutes = date.getMinutes();
+      if (minutes < 10){
+        minutes = "0" + minutes;
+      }
+      var seconds = date.getSeconds();
+      if (seconds < 10){
+        seconds = "0" + seconds;
+      }
+      var submitTime = year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
+      var article = "title="+articleTitle
+          +"$^@^$publisher="+articlePublisher
+          +"$^@^$content="+articleContent
+          +"$^@^$status=0"
+          +"$^@^$publish_date="+submitTime
+          +"$^@^$pic_id="+picId
+          +"$^@^$article_type="+type
+          +"$^@^$summary="+articleSummary;
+      console.log(article);
+
+      var obj_addArticle = new Array();
+      var processResult_addArticle = function(){
+        console.log(obj_addArticle);
+        if (obj_addArticle[0] == 'ok') {
+          layer.alert("文章上传成功，请等待管理员审核",function() {
+            layer.closeAll();
+          });
+          reloadTable();
+        }
+        else {
+          layer.alert("文章上传失败，请稍后重试！")
+        }
+      };
+      getFromWS("home/sie_web/articleManage/addArticle.template",article,obj_addArticle,processResult_addArticle);
+    })
+</script>
+
+<!--修改文章页面-->
+<div class="newArticle" id="modifyArticle" style="display: none">
+    <div class="articleHeader">
+        <div class="textArea">
+            <div class="articleTitle">文章标题：
+                <input type="text" class="textInput" placeholder="文章标题" id="modifyTitle">
+            </div>
+            <div class="articlePublisher">文章作者：
+                <input type="text" class="textInput" placeholder="文章作者" id="modifyPublisher">
+                <!--<div class="titleMark">（若不填写文章作者默认为当前登录用户）</div>-->
+            </div>
+            <ul class="articleType" id="modifyTitleTypeChoose">文章类型：
+                <li name="articleType" type="1" class="typeItem" style="background: grey;color: white" isChoose="true">教学活动</li>
+                <li name="articleType" type="2" class="typeItem" isChoose="false">政策公告</li>
+                <li name="articleType" type="3" class="typeItem" isChoose="false">文化交流</li>
+                <li name="articleType" type="4" class="typeItem" isChoose="false">其他新闻</li>
+            </ul>
+            <div class="coverPictures">
+                <label class="lineTitle">文章封面：</label>
+                <div class="choosePicture">
+                    <button id="selectPic">选择图片</button>
+                    <label class="pictureName" id="ipcName"></label>
+                    <input type="file" id="coverPic" style="display: none" onchange="selectPic()">
+                    <button id="uploadPic">上传封面</button>
+                </div>
+            </div>
+        </div>
+        <div class="imageArea">
+            封面图片预览（上传之后自动生成）
+            <img src="../images/cover-picture.png" alt="" id="previewPic" picId="">
+        </div>
+    </div>
+    <div class="articleEditor" id="modifyEditor"></div>
+    <div class="button-box">
+        <div class="block"></div>
+        <button class="submit" id="updateArticle">提交</button>
+        <button class="return" onclick="layer.closeAll()">返回</button>
+    </div>
+</div>
+
+<!--审核文章-->
+<div class="newArticle" id="reviewArticle" style="display: none">
+    <div class="articleHeader">
+        <div class="textArea">
+            <div style="display: flex;flex-direction: row">
+                <div class="articleTitle" id="status">审核状态：</div>
+                <div class="statusUnknown" id="statusUnknown" style="display:none">待审核</div>
+                <div class="statusNo" id="statusNo" style="display:none">审核未通过</div>
+            </div>
+            <div class="articleTitle">文章标题：
+                <input type="text" class="textInput" placeholder="文章标题" id="title">
+            </div>
+            <div class="articlePublisher">文章作者：
+                <input type="text" class="textInput" placeholder="文章作者" id="publisher">
+                <!--<div class="titleMark">（若不填写文章作者默认为当前登录用户）</div>-->
+            </div>
+            <ul class="articleType" id="type">文章类型：
+                <li name="articleType" type="1" class="typeItem" style="background: grey;color: white" isChoose="true">教学活动</li>
+                <li name="articleType" type="2" class="typeItem" isChoose="false">政策公告</li>
+                <li name="articleType" type="3" class="typeItem" isChoose="false">文化交流</li>
+                <li name="articleType" type="4" class="typeItem" isChoose="false">其他新闻</li>
+            </ul>
+        </div>
+        <div class="imageArea">
+            封面图片预览：
+            <img src="../images/cover-picture.png" alt="" id="picture" picId="">
+        </div>
+    </div>
+    <div class="articleEditor" id="content">文章内容：</div>
+    <div class="articleEditor" id="reviewResult">审核结果：（通过可不填，不通过则需要填写不通过原因）</div>
+    <div class="button-box">
+        <div class="block"></div>
+        <button class="submit" id="reviewArticleYes">通过</button>
+        <button class="submit" style="background: #FF5722" id="reviewArticleNo">不通过</button>
+        <button class="return" onclick="layer.closeAll()">返回</button>
+    </div>
+</div>
+
+<!--提交审核结果-->
+<script>
+    $("#reviewArticleYes").click(function() {
+          console.log('审核通过');
+          var status = '1';
+          var result = reviewResult.txt.text();
+          var articleId = sessionStorage.getItem("articleId");
+          var review = 'status=' + status + '$^@^$reviewResult=' + result+"$^@^$articleId="+articleId;
+          console.log(review);
+          var obj_reviewArticle = new Array();
+          var processResult_reviewArticle = function() {
+            layer.msg("审核通过", {icon: 6},function() {
+              layer.closeAll();
+            });
+            reloadTable();
+          };
+          getFromWS("home/sie_web/articleManage/reviewArticle.template",review,obj_reviewArticle,processResult_reviewArticle);
+        }
+    );
+    $("#reviewArticleNo").click(function() {
+          console.log("审核未通过");
+          var status = "-1";
+          var result = reviewResult.txt.text();
+          if (result == '') {
+            layer.msg("请填写未通过审核的原因，谢谢",function() {});
+            return false;
+          }
+          var articleId = sessionStorage.getItem("articleId");
+          var review = 'status=' + status + '$^@^$reviewResult=' + result+"$^@^$articleId="+articleId;
+          console.log(review);
+          var obj_reviewArticle = new Array();
+          var processResult_reviewArticle = function() {
+            layer.msg("审核未通过", {icon: 5},function() {
+              layer.closeAll();
+            });
+            reloadTable();
+          };
+          getFromWS("home/sie_web/articleManage/reviewArticle.template",review,obj_reviewArticle,processResult_reviewArticle);
+        }
+    );
+</script>
+</html>

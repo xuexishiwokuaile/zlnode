@@ -1,0 +1,17 @@
+<%
+    /// 文 件 名：reviewArticle
+    /// 描    述：审核文章
+    /// 项目名称：GJY_test      
+    /// 作    者：武汉大学国家网络安全学院@王顺福    
+    /// 发布日期：2019/9/28 20:42  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+  debugMsg("=======articleId:"+:articleId+"=========status:"+:status+"=====reviewResult:"+:reviewResult+"==========")
+
+  :sql_reviewArticle = "UPDATE article SET status=?,reason=? WHERE id=?"
+  :resultRecord = changeRecordSet(:sql_reviewArticle,S(:status),S(:reviewResult),S(:articleId))
+%>

@@ -1,0 +1,66 @@
+<%
+    /// 文 件 名：getUserList
+    /// 描    述：获取用户列表（包括分页，条件查询等）(用一句话描述该文件做什么)  
+    /// 项目名称：sie_web      
+    /// 作    者：武汉大学国家网络安全学院@沈家强    
+    /// 发布日期：2019/5/27 14:54  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+    /// 前端分页  传来两个值 page当前页  limit页大小
+    /// 如果传入了机构的id  则还可以按照机构id进行分页  depart_id
+    /// 搜索的关键字 keywords
+    debugMsg("[DEBUGMSG]:getUserList.template 位置:14:"+"page="+:page+"=limit="+:limit+"==depart_id="+:depart_id+"==keywords=="+:keywords)
+
+
+    ///是否传入了搜索的关键字
+    If :keywords =="__error__"
+       :keywords = ""
+    EndIf
+
+    /// 是否传入了机构id
+    If :depart_id !="__error__" && :depart_id != 0
+        /// 获取当前机构下用户的数量
+        :sql_get_depart_users_count = "select * from st_passports where classification !=? and (depart_id = ? OR depart_id in (SELECT id from st_depart_map WHERE pid = ?)) and (login_name like ? OR name like ?)"
+        :resultRecord = changeRecordSet(:sql_get_depart_users_count,S(2),S(:depart_id),S(:depart_id),S("%"+:keywords+"%"),S("%"+:keywords+"%"))
+        :recordNum = recordCount()
+        ///分页
+        :sql_get_users = "select * from st_passports where classification !=? and (depart_id = ? OR depart_id in (SELECT id from st_depart_map WHERE pid = ?)) and (login_name like ? OR name like ?)  LIMIT ? OFFSET ?"
+        :resultRecord = changeRecordSet(:sql_get_users,S(2),S(:depart_id),S(:depart_id),S("%"+:keywords+"%"),S("%"+:keywords+"%"),S(:limit),S((:page-1)*:limit))
+    Else
+        /// 获取所有用户数量
+        :sql_get_all_users_count = "select * from st_passports where classification !=? and (login_name like ? OR name like ?)"
+        :resultRecord = changeRecordSet(:sql_get_all_users_count,S(2),S("%"+:keywords+"%"),S("%"+:keywords+"%"))
+        :recordNum = recordCount()
+        ///分页
+        :sql_get_users = "select * from st_passports where classification !=? and (login_name like ? OR name like ?) LIMIT ? OFFSET ?"
+        :resultRecord = changeRecordSet(:sql_get_users,S(2),S("%"+:keywords+"%"),S("%"+:keywords+"%"),S(:limit),S((:page-1)*:limit))
+    EndIf
+
+    :result_records_array=""
+    If :resultRecord == "ok"
+        Repeat
+          ///循环主体
+          :result_records_item = jsonAddItem("", "id", S(id))
+          :result_records_item = jsonAddItem(:result_records_item,"login_name",S(login_name))
+          :result_records_item = jsonAddItem(:result_records_item,"name",S(name))
+          :result_records_item = jsonAddItem(:result_records_item,"register_date",S(register_date))
+          :result_records_array = jsonAddArrayItem(:result_records_array, :result_records_item)
+        EndRepeat
+        ///成功 返回状态码0
+        :code = 0
+        :result_records_items = jsonAddItem("","code",:code)
+        :result_records_items = jsonAddItem(:result_records_items,"data",:result_records_array)
+    Else
+        /// 下面操作的目的是  配合前端layui框架  在table中显示  无数据
+        :code = 0
+        :result_records_array="[]"
+        :result_records_items = jsonAddItem("","code",:code)
+        :result_records_items = jsonAddItem(:result_records_items,"data",:result_records_array)
+    EndIf
+    :result_records_items = jsonAddItem(:result_records_items,"count",:recordNum)
+    =:result_records_items
+%>

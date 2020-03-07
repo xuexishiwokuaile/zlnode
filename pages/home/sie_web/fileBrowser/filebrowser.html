@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+	<!-- Head -->
+	<head>
+		<title>汉语国际推广教学资源研究与开发基地</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta charset="utf-8">
+		<meta name="keywords" content="" />
+
+		<!-- default css files -->
+		<link rel="stylesheet" href="../css/portal/bootstrap.css" type="text/css" media="all">
+		<link rel="stylesheet" href="../css/portal/style.css" type="text/css" media="all">
+		<link rel="stylesheet" href="../css/portal/font-awesome.min.css" />
+		<!-- default css files -->
+		<!-- 主页css -->
+		<link rel="stylesheet" type="text/css" href="../css/portal/index.css" />
+		<!-- 通用css -->
+		<link rel="stylesheet" type="text/css" href="../css/portal/comm.css" />
+		
+		<!--web font-->
+		<link href="http://fonts.googleapis.com/css?family=Noto+Sans:400,400i,700,700i&amp;subset=cyrillic,cyrillic-ext,devanagari,greek,greek-ext,latin-ext,vietnamese"
+		 rel="stylesheet">
+		<link href="http://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i,800,800i&amp;subset=cyrillic,cyrillic-ext,greek,greek-ext,latin-ext,vietnamese"
+		 rel="stylesheet">
+		<!--//web font-->
+		<!--JQ-->
+		<script src="../js/jquery-2.1.4.min.js"></script>
+		<!--zoolina基础配置-->
+		<!--<script type="text/javascript" src="/Scripts/zoolina.page.whu.plug.js"></script>-->
+		<script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+
+		<script>
+			$(function() {
+
+				//验证登录状态
+				let userName = sessionStorage.getItem("loginName");
+				let userToken = sessionStorage.getItem("userToken");
+				let userId = sessionStorage.getItem("userId");
+				let classification = sessionStorage.getItem("classification");
+
+				let objCheckLogin = new Array();
+				var checkLoginResult = function() {
+					console.log(objCheckLogin);
+					console.log("用户状态："+objCheckLogin[0]);
+					if(objCheckLogin[0]=="bad" || objCheckLogin[0]=="failed"||userName==null||userToken==null||userName==" "||userToken==" "){
+						sessionStorage.setItem('userId'," ");
+						sessionStorage.setItem('userToken'," ");
+						sessionStorage.setItem('classification'," ");
+						sessionStorage.setItem('loginName'," ");
+						var hrefPage = "/pages/home/sie_web/news/newsList.html?articlePage="+articlePage;
+						console.log(hrefPage);
+						sessionStorage.setItem("hrefPage",hrefPage);
+						$(".rigster a").text("注册");
+						$(".login a").text("登录");
+						$(".login a").attr("href","../login.html");
+						// window.location.reload();
+					}else{
+						var name = sessionStorage.getItem("name");
+						console.log(name);
+						// 登录状态有效
+						if (userToken != null){
+							$(".rigster a").text("退出");
+							$(".rigster a").attr("href","/pages/home/sie_web/news/newsList.html?articlePage="+articlePage);
+							$(".rigster a").click(function() {
+								sessionStorage.setItem('userId'," ");
+								sessionStorage.setItem('userToken'," ");
+								sessionStorage.setItem('classification'," ");
+								sessionStorage.setItem('loginName'," ");
+								sessionStorage.setItem("id","");
+								sessionStorage.setItem("name","");
+								var hrefPage = "/pages/home/sie_web/news/newsList.html?articlePage="+articlePage;
+								console.log(hrefPage);
+								sessionStorage.setItem("hrefPage",hrefPage);
+							});
+							$(".login a").attr("href","/pages/home/sie_web/personalCenter/home.html");
+							$(".login a").text(name);
+						}
+					}
+				};
+				getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+				//获取顶部菜单栏
+				let topMenu = new Array();
+				let topMenuResult = function(){
+					// console.log(topMenu[0]);
+					if(topMenu[0] != "bad"){
+						let menusArray = JSON.parse(topMenu[0]);
+						console.log(menusArray);
+						for(let i=0;i<menusArray.length;i++){
+							if(menusArray[i].name == ""){1
+								$(".top-menu").append(`
+                        <li class="active"><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+							}else{
+								$(".top-menu").append(`
+                        <li><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+							}
+						}
+					}
+				};
+				getFromWS("home/sie_web/index/getTopMenu.template","",topMenu,topMenuResult);
+			});
+
+            function exit(){
+				sessionStorage.setItem("id","");
+				sessionStorage.setItem("name","");
+            	sessionStorage.setItem('userId'," ");
+                sessionStorage.setItem('userToken'," ");
+                sessionStorage.setItem('classification'," ");
+                sessionStorage.setItem('loginName'," ");
+
+                $(location).attr("href","../login.html");
+
+            }
+		</script>
+	</head>
+	<!-- Body -->
+	<body>
+		<!-- banner -->
+		<div class="banner">
+			<div class="header-top">
+				<div class="header-outer">
+					<div class="header-top-left">
+						<a href="../index.html" class="header-logo"><img src="../images/logo.png"></a>
+						<span class="language">中文</span><span class="language">ENGLISH</span>
+					</div>
+					<div class="header-top-right">
+						<div>
+							<p class="header-email-tel"><i class="fa fa-envelope" aria-hidden="true"></i><a href="mailto:liuyan@whu.edu.cn">LIUYAN@WHU.EDU.CN</a></p>
+							<p class="header-email-tel"><i class="fa fa-phone" aria-hidden="true"></i> +86 8765 8888</p>
+						</div>
+						<div class="login-rigster">
+							<div class="login">
+								<a href="../login.html">登录</a>
+							</div>
+							<div class="rigster">
+								<a href="../login.html">注册</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="head">
+				<div class="container">
+					<div class="navbar-top">
+						<!-- Brand and toggle get grouped for better mobile display -->
+						<div class="navbar-header">
+							<div class="navbar-brand logo">
+								<a href="../index.html" class="header-title">汉语国际推广教学资源研究与开发基地</a>
+							</div>
+						</div>
+						<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+							<ul class="nav navbar-nav link-effect-4 top-menu">
+							</ul>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+				</div>
+			</div>
+		
+		<iframe src="http://192.168.10.249:5032" style="width: 100%;height: 1000px" id="filebrowser"></iframe>
+
+		<div class="copyright links">
+			<div class="container">
+				<div class="copyrightbottom links-outer">
+					<div class="links-title">
+						友情链接
+					</div>
+					<div class="links-items">
+						<div class="links-item">
+							<a href="#">汉语国际推广研究所</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广新师资培养基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉学家研修基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广多语种基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉语教学研究基地</a>
+						</div>
+					</div>
+					<div class="links-items">
+						<div class="links-item">
+							<a href="#">中华传统文化研究与体验基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广南方基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉语教师研修基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉语教材研发与培训基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际汉语传播湖南基地</a>
+						</div>
+					</div>
+					<div class="links-items">
+						<div class="links-item">
+							<a href="#">国际商务汉语教学与资源开发基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">国际商务汉语教学与资源开发基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广东北基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">汉语国际推广多语种大连基地</a>
+						</div>
+						<div class="links-item">
+							<a href="#">东南亚汉语推广师资培训基地</a>
+						</div>
+					</div>
+				</div>
+				<div class="clearfix"></div>
+			</div>
+		</div>
+		<div class="copyright">
+			<div class="footer">
+				<div class="technical-support">
+					武汉大学国家网络安全学院技术支持
+				</div>
+				<div class="organizer">
+					主办单位：汉语国际推广教学资源研究与开发基地 武汉大学国际教育学院
+				</div>
+				<div class="technical-support">
+					2019@ 技术支持：027-68777156 SHENJIAQIANG@WHU.EDU.CN
+				</div>
+			</div>
+			<div class="clearfix"></div>
+		</div>
+		<!-- //copyright -->
+
+
+
+		<!-- Default-JavaScript-File -->
+		<script type="text/javascript" src="../js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="../js/bootstrap.js"></script>
+		<!-- //Default-JavaScript-File -->
+
+		<!-- clients js file-->
+		<script src="../js/jquery.wmuSlider.js"></script>
+		<script>
+			$('.example1').wmuSlider();
+		</script>
+		<!-- //clients js file -->
+
+		<!-- Jarallax -->
+		<script src="../js/jarallax.js"></script>
+		<script type="text/javascript">
+			/* init Jarallax */
+			$('.jarallax').jarallax({
+				speed: 0.5,
+				imgWidth: 1366,
+				imgHeight: 768
+			})
+		</script>
+		<!-- //Jarallax -->
+	</body>
+	<!-- //Body -->
+</html>

@@ -1,0 +1,10 @@
+///公共相应的对应的方法引入
+<%#include "common/commonFunction.template"%>
+
+<%
+    :strContent = "  sjq ni hao hello yar    "
+    :strReturn = trim(:strContent)
+    debugMsg(:strReturn)
+    =:strReturn
+%>
+

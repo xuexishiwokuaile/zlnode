@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>用户管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!--layui配置 -->
+    <link rel="stylesheet" href="../../layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../layuiadmin/style/admin.css" media="all">
+    <script src="../../layuiadmin/layui/layui.js"></script>
+    <script src="/js/jquery.min.js"></script>
+    <!--Ztree-->
+    <script src="/js/jquery.ztree.all.min.js"></script>
+    <link rel="stylesheet" href="/css/zTreeStyle/zTreeStyle.css">
+    <!--zoolina系统基础系统配置-->
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+    <script type="text/javascript" src="/Scripts/zoolina.page.whu.plug.js"></script>
+    <style>
+        .card-outer {
+            display: flex;
+        }
+
+        .user-table {
+            padding-left: 20px;
+            font-size: 14px;
+        }
+
+        .layui-table-tool-temp {
+            display: flex;
+        }
+
+        .layui-table-cell {
+            height: auto !important;
+            white-space: normal !important;
+        }
+
+        .user-table {
+            width: 100%;
+        }
+
+        .editor-user {
+            padding: 20px;
+        }
+
+        .layui-form-selected dl {
+            width: 120px;
+        }
+        .add-user {
+            padding: 20px;
+        }
+        .table-header-btn{
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .layui-btn-container .layui-btn {
+            margin-bottom: 0px!important;
+        }
+    </style>
+    <script type="text/javascript">
+      let checkedDepart = '';//存放选中机构所有信息
+      let checkedDepartId = '';
+      //生成机构树
+      $(function() {
+        //获取机构信息
+        var setting = {
+          data: {
+            simpleData: {
+              enable: true,
+            },
+          },
+          async: {
+            enable: true,
+            type: 'get',
+            dataType: 'json',
+            url: '/home/admin/departManage/getDepartment.template',
+            // dataFilter: filter
+          },
+          callback: {//请求成功后回调
+            onClick: onclickTree,//点击相关节点触发的事件
+            onAsyncSuccess: ztreeOnAsyncSuccess,//异步加载成功后执行的方法
+          },
+          view: {
+            showIcon: false,
+          },
+        };
+
+        //点击树触发的事件
+        function onclickTree(event, treeId, treeNode) {
+          let keywords = $('#searchInput').val();
+          console.log(treeNode);
+          checkedDepart = treeNode; //当前节点的所有信息
+          checkedDepartId = treeNode.id; //当前节点的id
+          //重载表格
+          layui.use('table', function() {
+            var table = layui.table;
+            table.reload('test', {
+              url: '/home/admin/userManage/getUserList.template',
+              where: { //设定异步数据接口的额外参数，任意设
+                depart_id: checkedDepartId,
+                keywords: keywords,
+              }
+              , page: {
+                curr: 1, //重新从第 1 页开始
+              },
+            });
+          });
+        };
+
+        //获取树成功后进行的回调操作
+        function ztreeOnAsyncSuccess(event, treeId, treeNode) {
+          //展开树
+          expand_ztree(treeId);
+          //设置图标
+          //var treeObj = $.fn.zTree.getZTreeObj("treeDemo");
+          //var nodes = treeObj.getNodes();
+        };
+
+        function expand_ztree(treeId) {
+          var treeObj = $.fn.zTree.getZTreeObj(treeId);
+          treeObj.expandAll(true);
+        }
+
+        $.fn.zTree.init($('#treeDemo'), setting);
+      });
+
+      //加载table
+      layui.use(['table', 'form', 'jquery'], function() {
+        var table = layui.table;
+        var form = layui.form;
+        var $ = layui.$;
+
+        table.render({
+          elem: '#test'
+          , url: '/home/admin/userManage/getUserList.template'
+          , cols: [
+            [
+              {type: 'checkbox', fixed: 'left'}
+              , {field: 'id', title: 'ID', align: 'center', width: 220}
+              , {field: 'login_name', title: '用户名', align: 'center'}
+              , {field: 'name', title: '姓名', align: 'center'}
+              , {field: 'register_date', title: '注册时间', sort: true, align: 'center'}
+              , {fixed: 'right', title: '操作', toolbar: '#barDemo', align: 'center'},
+            ]]
+          , page: true,
+        });
+
+        //监听行工具事件
+        table.on('tool(test)', function(obj) {
+          var data = obj.data;
+          if (obj.event === 'del') {
+            layer.confirm('确定删除该用户？', function(index) {
+              let obj = new Array();
+              let Result = function() {
+                if (obj[0] == 'ok') {
+                  window.location.reload();
+                } else {
+                  layer.msg('删除失败', function() {
+                    //关闭后的操作
+                  });
+                }
+              };
+              getFromWS('home/admin/userManage/deleteUser.template', 'id=' + data.id, obj, Result);
+              layer.close(index);
+            });
+          } else if (obj.event === 'edit') {
+            // console.log(data);
+            /// 获取用户信息，填充到input
+            let obj = new Array();
+            let departName = '';
+            let Result = function() {
+              if (obj[0]) {
+                var userInfo = JSON.parse(obj[0]);
+                $('.editor-user-id').val(data.id);
+                $('.name').val(data.name);
+                $('.phonenumber').val(userInfo[0].phonenumber == '__null__' ? '' : userInfo[0].phonenumber);
+                $('.email').val(userInfo[0].email == '__null__' ? '' : userInfo[0].email);
+                if (userInfo[0].gender == '女') {
+                  $('[name=\'gender\']').val('女');
+                } else {
+                  $('[name=\'gender\']').val('男');
+                }
+                form.render('select'); //更新select
+                departName = userInfo[0].depart_name;
+                //加载机构select列表
+                let options = '';
+                let obj2 = new Array();
+                let Result2 = function() {
+                  let departs = JSON.parse(obj2[0]);
+                  for (let i = 0; i < departs.length; i++) {
+                    if (departName == departs[i].name) {
+                      // 用户所在的机构  选中
+                      options += `<option value="${departs[i].id}" selected class="layui-input-inline">${departs[i].name}</option>`;
+                    } else {
+                      options += `<option value="${departs[i].id}" class="layui-input-inline">${departs[i].name}</option>`;
+                    }
+                  }
+                  ;
+                  $('#depart').html(options);
+                  form.render('select'); //更新select
+                };
+                getFromWS('home/admin/departManage/getDepartment.template', '', obj2, Result2);
+              }
+            };
+            getFromWS('home/admin/userManage/getUserInfo.template', 'id=' + data.id, obj, Result);
+            layer.open({
+              type: 1,
+              area: ['400px', '420px'],
+              shadeClose: true, //点击遮罩关闭
+              title: '编辑',
+              content: $('#editor-user'),
+            });
+          }
+        });
+        // 监听编辑-提交
+        layui.use(['jquery', 'form'], function() {
+          var form = layui.form;
+          //监听提交
+          form.on('submit(editorSave)', function(data) {
+            console.log(JSON.stringify(data.field));
+            console.log(data.field);
+            let obj = new Array();
+            let Result = function() {
+              if (obj[0] == 'ok') {
+                window.location.reload();
+              } else if (obj[0] == 'bad') {
+                layer.msg('编辑失败', {icon: 5});
+                return false;
+              } else if (obj[0] == 'error') {
+                layer.msg('无法移动到该机构', {icon: 5});
+                return false;
+              }
+            };
+            getFromWS('home/admin/userManage/updateUserInfo.template',
+                'depart_id=' + data.field.depart + '$^@^$email=' + data.field.email + '$^@^$gender=' +
+                data.field.gender + '$^@^$id=' + data.field.id + '$^@^$name=' + data.field.name + '$^@^$phonenumber=' +
+                data.field.phonenumber, obj, Result);
+            return false;
+          });
+        });
+        //新增用户-弹出
+        $("#addUser").click(function() {
+          ///加载机构select
+          //加载机构select列表
+          let options = '';
+          let obj2 = new Array();
+          let Result2 = function() {
+            let departs = JSON.parse(obj2[0]);
+            for (let i = 0; i < departs.length; i++) {
+              if (departs[i].id != 0) {
+                options += `<option value="${departs[i].id}">${departs[i].name}</option>`;
+              }
+            }
+            ;
+            $('#add-user-depart').html(options);
+            form.render('select'); //更新select
+          };
+          getFromWS('home/admin/departManage/getDepartment.template', '', obj2, Result2);
+
+          layer.open({
+            type: 1,
+            area: ['400px', '560px'],
+            shadeClose: true, //点击遮罩关闭
+            title: '新增用户',
+            content: $('#add-user'),
+          });
+        });
+        // 监听新建-提交
+        layui.use(['jquery', 'form'], function() {
+          var form = layui.form;
+          //监听提交
+          form.on('submit(addUser)', function(data) {
+            console.log(JSON.stringify(data.field));
+            console.log(data.field);
+            let pwd1 = data.field.userPwd1;
+            let pwd2 = data.field.userPwd2;
+            if (pwd1 == pwd2) {
+              let obj = new Array();
+              let Result = function() {
+                console.log(obj[0]);
+                if (obj[0] == 'error') {
+                  layer.msg('不能选择该机构', function() {
+                    //关闭后的操作
+                  });
+                  return false;
+                } else if (obj[0] == 'bad') {
+                  layer.msg('新增失败', function() {
+                    //关闭后的操作
+                  });
+                } else {
+                  window.location.reload();
+                }
+              };
+              getFromWS('home/admin/userManage/addUser.template',
+                  'login_name=' + data.field.loginName + '$^@^$passwd=' + data.field.userPwd2 + '$^@^$name=' +
+                  data.field.name + '$^@^$phonenumber=' + data.field.userPhonenumber + '$^@^$email=' +
+                  data.field.userEmail + '$^@^$gender=' + data.field.userGender + '$^@^$depart_id=' + data.field.depart,
+                  obj, Result);
+            } else {
+              layer.msg('密码不一致', function() {
+                //关闭后的操作
+              });
+              return false;
+            }
+            return false;
+          });
+        });
+        //批量删除
+        $("#batchDelete").click(function() {
+          var checkStatus = table.checkStatus('test');
+          var data = checkStatus.data;
+          if (data == '') {
+            layer.msg('请选择要删除的用户', function() {
+              //关闭后的操作
+            });
+          } else {
+            layer.confirm('确定批量删除这些用户？', function(index) {
+              let userIds = '';
+              let usersCount = 0;
+              for (var i = 0; i < data.length; i++) {
+                userIds = userIds + data[i].id + ',';
+                usersCount++;
+              }
+              let obj = new Array();
+              let Result = function() {
+                if (obj[0] == 'ok') {
+                  window.location.reload();
+                }
+              };
+              getFromWS('home/admin/userManage/batchDeleteUsers.template',
+                  'ids=' + userIds + '$^@^$usersCount=' + usersCount, obj, Result);
+              layer.close(index);
+            });
+          }
+        });
+        //搜索
+        $("#search").click(function() {
+          var data = $('#searchInput').val();
+          if (data == '') {
+            layer.msg('请输入搜索的内容', function() {
+              //关闭后的操作
+            });
+          } else {
+            //重载表格
+            layui.use('table', function() {
+              var table = layui.table;
+              table.reload('test', {
+                url: '/home/admin/userManage/getUserList.template',
+                where: { //设定异步数据接口的额外参数，任意设
+                  keywords: data,
+                }
+                , page: {
+                  curr: 1, //重新从第 1 页开始
+                },
+              });
+            });
+          }
+        });
+
+      });
+    </script>
+</head>
+<body>
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-form layui-card-header">
+        </div>
+        <div class="layui-card-body card-outer">
+            <div class="zTreeDemoBackground left">
+                <ul id="treeDemo" class="ztree"></ul>
+            </div>
+            <div class="user-table">
+                <div class="table-header-btn">
+                    <div class="layui-btn-container">
+                        <button class="layui-btn layui-btn-sm" id="addUser">新增用户</button>
+                        <button class="layui-btn layui-btn-sm" id="batchDelete">批量删除</button>
+                    </div>
+                    <div class="search-outer">
+                        <div class="layui-inline">
+                            <input class="layui-input" name="id" id="searchInput" autocomplete="off"
+                                   placeholder="用户名 / 姓名">
+                        </div>
+                        <button class="layui-btn layui-btn-sm" id="search">搜索</button>
+                    </div>
+                </div>
+                <table class="layui-hide" id="test" lay-filter="test"></table>
+                <script type="text/html" id="barDemo">
+                    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+<script type="text/javascript" src="/Scripts/StationJSLib-bak.js"></script>
+</body>
+<!--修改用户信息-弹出层-->
+<div id="editor-user" class="editor-user" style="display: none;">
+    <form class="layui-form" lay-filter="editor-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label">姓名</label>
+            <div class="layui-input-inline">
+                <input type="text" name="name" required lay-verify="required" placeholder="请输入姓名"
+                       autocomplete="off" class="layui-input name">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">机构</label>
+            <div class="layui-input-inline">
+                <select name="depart" id="depart" lay-verify="required">
+
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">性别</label>
+            <div class="layui-input-inline">
+                <select name="gender" class="gender" lay-verify="required">
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">手机</label>
+            <div class="layui-input-inline">
+                <input type="text" name="phonenumber" required lay-verify="phone" placeholder="请输入手机号"
+                       autocomplete="off" class="layui-input phonenumber">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">邮箱</label>
+            <div class="layui-input-inline">
+                <input type="text" name="email" required lay-verify="email" placeholder="请输入邮箱"
+                       autocomplete="off" class="layui-input email">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-inline">
+                <!--隐藏域，存放id-->
+                <input type="hidden" name="id" class="layui-input editor-user-id">
+            </div>
+        </div>
+        <div class="layui-form-item" style="display: flex;justify-content: center">
+            <div class="save-editor-outer">
+                <button class="layui-btn" lay-submit lay-filter="editorSave">保存</button>
+            </div>
+        </div>
+    </form>
+</div>
+<!--新增用户信息-弹出层-->
+<div id="add-user" class="add-user" style="display: none">
+    <form class="layui-form" lay-filter="editor-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">用&nbsp;&nbsp;户&nbsp;&nbsp;名</label>
+            <div class="layui-input-inline">
+                <input type="text" name="loginName" required lay-verify="required" placeholder="请输入用户名"
+                       autocomplete="off" class="layui-input add-user-login-name">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">密&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;码</label>
+            <div class="layui-input-inline">
+                <input type="password" name="userPwd1" required lay-verify="required" placeholder="请输入密码"
+                       autocomplete="off" class="layui-input add-user-pwd1">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">确认密码</label>
+            <div class="layui-input-inline">
+                <input type="password" name="userPwd2" required lay-verify="required" placeholder="请再次输入密码"
+                       autocomplete="off" class="layui-input add-user-pwd2">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">机&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;构</label>
+            <div class="layui-input-inline">
+                <select name="depart" id="add-user-depart" lay-verify="required">
+
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">姓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;名</label>
+            <div class="layui-input-inline">
+                <input type="text" name="name" required lay-verify="required" placeholder="请输入姓名"
+                       autocomplete="off" class="layui-input add-user-name">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">性&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;别</label>
+            <div class="layui-input-inline">
+                <select name="userGender" class="add-user-gender" lay-verify="required">
+                    <option value="男" selected>男</option>
+                    <option value="女">女</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">手&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机</label>
+            <div class="layui-input-inline">
+                <input type="text" name="userPhonenumber" required lay-verify="phone" placeholder="请输入手机号"
+                       autocomplete="off" class="layui-input add-user-phonenumber">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" decode="true">邮&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;箱</label>
+            <div class="layui-input-inline">
+                <input type="text" name="userEmail" required lay-verify="email" placeholder="请输入邮箱"
+                       autocomplete="off" class="layui-input add-user-email">
+            </div>
+        </div>
+        <div class="layui-form-item" style="display: flex;justify-content: center">
+            <div class="save-editor-outer">
+                <button class="layui-btn" lay-submit lay-filter="addUser">确定</button>
+            </div>
+        </div>
+    </form>
+</div>
+</html>

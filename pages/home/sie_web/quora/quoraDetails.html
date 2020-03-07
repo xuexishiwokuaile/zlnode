@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Head -->
+<head>
+    <title>问题详情</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta name="keywords" content=""/>
+
+    <!-- default css files -->
+    <link rel="stylesheet" href="../css/bootstrap.css" type="text/css" media="all">
+    <link rel="stylesheet" href="../css/style.css" type="text/css" media="all">
+    <link rel="stylesheet" href="../css/font-awesome.min.css"/>
+    <!-- default css files -->
+    <!-- 主页css -->
+    <link rel="stylesheet" type="text/css" href="../css/index.css"/>
+    <!-- 通用css -->
+    <link rel="stylesheet" type="text/css" href="../css/cultureList.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/quoraDetails.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/lhcommon.css"/>
+
+    <script src="../js/jquery.min.js">
+    </script>
+
+    <script src="../js/swiper-3.4.2.jquery.min.js"></script>
+    <script src="../js/layer/layer.js"></script>
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+
+
+    <script type="text/javascript">
+        //获取文章ID
+        var articleId = Request("questionId");
+
+        function Request(strName) {
+            var strHref = location.href;
+            var intPos = strHref.indexOf('?');
+            var strRight = strHref.substr(intPos + 1);
+            var arrTmp = strRight.split('&');
+            for (var i = 0; i < arrTmp.length; i++) {
+                var arrTemp = arrTmp[i].split('=');
+                if (arrTemp[0].toUpperCase() == strName.toUpperCase()) {
+                    return arrTemp[1];
+                }
+            }
+            return '';
+        }
+
+        jQuery(document).ready(function($) {
+            $(".scroll").click(function(event) {
+                event.preventDefault();
+                $('html,body').animate({
+                    scrollTop: $(this.hash).offset().top
+                }, 1000);
+            });
+        });
+
+        $(function() {
+
+            //验证登录状态
+            let userName = sessionStorage.getItem("loginName");
+            let userToken = sessionStorage.getItem("userToken");
+            let userId = sessionStorage.getItem("userId");
+            let classification = sessionStorage.getItem("classification");
+
+            let objCheckLogin = new Array();
+            var checkLoginResult = function() {
+                console.log(objCheckLogin);
+                console.log("用户状态："+objCheckLogin[0]);
+                if(objCheckLogin[0]=="bad" || objCheckLogin[0]=="failed"||userName==null||userToken==null||userName==" "||userToken==" "){
+                    sessionStorage.setItem('userId', " ");
+                    sessionStorage.setItem('userToken', " ");
+                    sessionStorage.setItem('classification', " ");
+                    sessionStorage.setItem('loginName', " ");
+                    var hrefPage = "/pages/home/sie_web/culture/cultureDetails.html?articleId="+articleId;
+                    console.log(hrefPage);
+                    sessionStorage.setItem("hrefPage",hrefPage);
+                    $(".rigster a").text("注册");
+                    $(".login a").text("登录");
+                    $(".login a").attr("href", "../login.html");
+                }else{
+                    var name = sessionStorage.getItem("name");
+                    console.log(name);
+                    // 登录状态有效
+                    if (userToken != null) {
+                        $('.rigster a').text('退出');
+                        $('.rigster a').attr('href', '/pages/home/sie_web/culture/cultureDetails.html?articleId='+articleId);
+                        $('.rigster a').click(function() {
+                            sessionStorage.setItem('userId', ' ');
+                            sessionStorage.setItem('userToken', ' ');
+                            sessionStorage.setItem('classification', ' ');
+                            sessionStorage.setItem('loginName', ' ');
+                            sessionStorage.setItem('id', '');
+                            sessionStorage.setItem('name', '');
+                            var hrefPage = "/pages/home/sie_web/culture/cultureDetails.html?articleId="+articleId;
+                            console.log(hrefPage);
+                            sessionStorage.setItem('hrefPage', hrefPage);
+                        });
+                        $('.login a').attr('href', '/pages/home/sie_web/console.html');
+                        $('.login a').text(name);
+                    }
+                }
+            };
+            getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+            //获取顶部菜单栏
+            let topMenu = new Array();
+            let topMenuResult = function(){
+                // console.log(topMenu[0]);
+                if(topMenu[0] != "bad"){
+                    let menusArray = JSON.parse(topMenu[0]);
+                    for(let i=0;i<menusArray.length;i++){
+                        if(menusArray[i].name == "文化体验平台"){
+                            $(".top-menu").append(`
+                        <li class="active"><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+                        }else{
+                            $(".top-menu").append(`
+                        <li><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+                        }
+                    }
+                }
+            };
+            getFromWS("home/sie_web/menu/getTopMenu.template","",topMenu,topMenuResult);
+
+            //获取初始数据
+
+
+        })
+    </script>
+
+</head>
+<!-- Body -->
+<body>
+<div class="banner">
+    <div class="header-top">
+        <div class="header-outer">
+            <a href="../index.html" class="header-top-left">
+                <div class="header-logo"><img src="../images/logo.png"></div>
+                <span class="language">中文</span><span class="language">ENGLISH</span>
+            </a>
+            <div class="header-top-right">
+                <div>
+                    <p class="header-email-tel"><i class="fa fa-envelope" aria-hidden="true"></i><a href="mailto:liuyan@whu.edu.cn">LIUYAN@WHU.EDU.CN</a></p>
+                    <p class="header-email-tel"><i class="fa fa-phone" aria-hidden="true"></i> +86 8765 8888</p>
+                </div>
+                <div class="login-rigster">
+                    <div class="login">
+                        <a href="../login.html">登录</a>
+                    </div>
+                    <div class="rigster">
+                        <a href="../login.html">注册</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content">
+        <!--content-->
+        <div class="lh-content">
+            <section class="lh-other-box">
+                <div class="container lh-other-container">
+                    <div id="articleContent">
+                    </div>
+                    <div class="lh-newsRes-page">
+                        <ul class = "nextAndPrevious" id="nextAndPrevious">
+                            <li>
+                                <a id="previousArticle" href=""></a>
+                            </li>
+                            <li>
+                                <a id="nextArticle" href=""></a>
+                            </li>
+                        </ul>
+                        <a href="quoraList.html" class="lh-more" data-animated="fadeInUp">
+                            返回列表
+                            <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                    <div class="comment-outer">
+                        <div class="col-lg-12">
+                            <ul id="comment"></ul>
+                            <div class="form-group">
+                                <textarea class="form-control textarea" name="text" rows="3" placeholder="发表回复" id="commentText"></textarea>
+                                <button type="submit" id="commentSubmit" class="btn btn-primary btn-lg btn-block">发表</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+
+<!-- copyright -->
+<div class="copyright links">
+    <div class="container">
+        <div class="copyrightbottom links-outer">
+            <div class="links-title">
+                友情链接
+            </div>
+            <div class="links-items">
+                <div class="links-item">
+                    <a href="#">汉语国际推广研究所</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">汉语国际推广新师资培养基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">国际汉学家研修基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">汉语国际推广多语种基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">国际汉语教学研究基地</a>
+                </div>
+            </div>
+            <div class="links-items">
+                <div class="links-item">
+                    <a href="#">中华传统文化研究与体验基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">汉语国际推广南方基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">国际汉语教师研修基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">国际汉语教材研发与培训基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">国际汉语传播湖南基地</a>
+                </div>
+            </div>
+            <div class="links-items">
+                <div class="links-item">
+                    <a href="#">国际商务汉语教学与资源开发基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">国际商务汉语教学与资源开发基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">汉语国际推广东北基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">汉语国际推广多语种大连基地</a>
+                </div>
+                <div class="links-item">
+                    <a href="#">东南亚汉语推广师资培训基地</a>
+                </div>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+</div>
+<!-- //copyright -->
+<!-- copyright -->
+<div class="copyright">
+    <div class="footer">
+        <div class="technical-support">
+            武汉大学国家网络安全学院技术支持
+        </div>
+        <div class="organizer">
+            主办单位：汉语国际推广教学资源研究与开发基地 武汉大学国际教育学院
+        </div>
+        <div class="technical-support">
+            2019@ 技术支持：027-68777156 SHENJIAQIANG@WHU.EDU.CN
+        </div>
+    </div>
+    <div class="clearfix"></div>
+</div>
+<!-- //copyright -->
+
+
+<!-- Default-JavaScript-File -->
+<script type="text/javascript" src="../js/jquery-2.1.4.min.js"></script>
+<script type="text/javascript" src="../js/bootstrap.js"></script>
+<!-- //Default-JavaScript-File -->
+
+<!-- clients js file-->
+<script src="../js/jquery.wmuSlider.js"></script>
+<script>
+    $('.example1').wmuSlider();
+</script>
+<!-- //clients js file -->
+
+<!-- Jarallax -->
+<script src="../js/jarallax.js"></script>
+<script type="text/javascript">
+    /* init Jarallax */
+    $('.jarallax').jarallax({
+        speed: 0.5,
+        imgWidth: 1366,
+        imgHeight: 768
+    })
+</script>
+<!-- //Jarallax -->
+
+<!-- smooth scrolling -->
+<!-- <script src="../js/SmoothScroll.min.js"></script> -->
+<script type="text/javascript" src="../js/move-top.js"></script>
+<script type="text/javascript" src="../js/easing.js"></script>
+<!-- here stars scrolling icon -->
+<script type="text/javascript">
+
+    var userName = sessionStorage.getItem("name");
+
+    //获取文章ID
+    var articleId = Request("articleId");
+
+    function Request(strName){
+        var strHref = location.href;
+        var intPos = strHref.indexOf("?");
+        var strRight = strHref.substr(intPos + 1);
+        var arrTmp = strRight.split("&");
+        for(var i = 0; i < arrTmp.length; i++) {
+            var arrTemp = arrTmp[i].split("=");
+            if(arrTemp[0].toUpperCase() == strName.toUpperCase()){
+                return arrTemp[1];
+            }
+        }
+        return "";
+    }
+
+
+    $(document).ready(function () {
+
+        $().UItoTop({
+            easingType: 'easeOutQuart'
+        });
+
+        //加载文章内容
+        var obj_articleContent = new Array();
+        var processResult = function(){
+            console.log(obj_articleContent);
+            $("#articleContent").html(obj_articleContent[0]);
+        };
+        getFromWS("home/sie_web/quora/getQuoraArticleContent.template","articleId="+articleId,obj_articleContent,processResult);
+
+        //加载上下篇文章标题
+        var previousArticleId;
+        var previousArticleTitle;
+        var nextArticleId;
+        var nextArticleTitle;
+        var obj_nextAndPrevious = new Array();
+        var processResult_nextAndPrevious = function(){
+            var stringResult = obj_nextAndPrevious[0];
+            var jsonResult = JSON.parse(stringResult);
+            var arrayResult = jsonResult.data;
+            console.log(arrayResult);
+            console.log(articleId);
+            for (var i = 0; i <arrayResult.length;i++){
+                if (articleId == arrayResult[i].id) {
+                    if (i==0) {
+                        previousArticleId = "";
+                        previousArticleTitle = "无";
+                        nextArticleId = arrayResult[i+1].id;
+                        nextArticleTitle = arrayResult[i+1].title;
+                        break;
+                    }
+                    if (i == arrayResult.length - 1) {
+                        previousArticleId = arrayResult[i-1].id;
+                        previousArticleTitle = arrayResult[i-1].title;
+                        nextArticleId = "";
+                        nextArticleTitle = "无";
+                        break;
+                    }
+                    else {
+                        previousArticleId = arrayResult[i-1].id;
+                        previousArticleTitle = arrayResult[i-1].title;
+                        nextArticleId = arrayResult[i+1].id;
+                        nextArticleTitle = arrayResult[i+1].title;
+                        break;
+                    }
+                }
+            }
+            $("#previousArticle").text("上一篇：" + previousArticleTitle);
+            $("#previousArticle").attr("href","?articleId="+previousArticleId);
+            $("#nextArticle").text("下一篇：" + nextArticleTitle);
+            $("#nextArticle").attr("href","?articleId="+nextArticleId);
+
+            console.log(previousArticleId+"rferferf"+previousArticleTitle+"242424"+nextArticleId+"sefdsfs"+nextArticleTitle);
+        };
+        getFromWS("home/sie_web/quora/getNextAndPrevious.template","articleId="+articleId,obj_nextAndPrevious,processResult_nextAndPrevious);
+        //获取已有评论
+        getCommentList();
+    });
+
+    function getCommentList(){
+        console.log("加载评论");
+        var obj_comment = new Array();
+        var processResult_comment = function() {
+            $("#comment").html(obj_comment[0]);
+        };
+        getFromWS("home/sie_web/quora/getQuoraArticleComment.template","articleId="+articleId + "$^@^$userNames="+userName.replace(/\s/g,""),obj_comment,processResult_comment);
+    }
+
+    //评论
+    $("#commentSubmit").click(function() {
+        if (userName!=null && userName!=""){
+            var commentText = $("#commentText").val();
+            console.log(commentText);
+            if (commentText != "") {
+
+                /**
+                 * 获取当前时间
+                 */
+                var date = new Date();
+                var year = date.getFullYear();
+                var month = date.getMonth()+1;
+                if (month < 10){
+                    month = "0" + month;
+                }
+                var day = date.getDate();
+                if (day < 10){
+                    day = "0" + day;
+                }
+                var hours = date.getHours();
+                if (hours < 10){
+                    hours = "0" + hours;
+                }
+                var minutes = date.getMinutes();
+                if (minutes < 10){
+                    minutes = "0" + minutes;
+                }
+                var seconds = date.getSeconds();
+                if (seconds < 10){
+                    seconds = "0" + seconds;
+                }
+                var submitTime = year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
+
+                var comment = "articleId="+articleId+"$^@^$userNames="+userName.replace(/\s/g,"")+"$^@^$commentText="+commentText+"$^@^$submitTime="+submitTime;
+                console.log(comment);
+                var obj_addArticleComment = new Array();
+                var processResult_addArticleComment = function() {
+                    $("#commentText").val("");
+                    console.log("评论成功");
+                    //评论成功之后重新加载评论部分
+
+                    $("#comment").html("");
+
+                    setTimeout(getCommentList,100);
+                };
+                getFromWS("home/sie_web/quora/addQuoraQuestionComment.template",comment,obj_addArticleComment,processResult_addArticleComment());
+            }
+            else {
+                layer.msg('评论不能为空',{time: 500,shade : [0.5,'#ffffff',true]})
+            }
+        }
+        else {
+            layer.msg('请先登录，再评论',{time: 500,shade : [0.5,'#ffffff',true]})
+        }
+
+    });
+</script>
+</body>
+<!-- //Body -->
+</html>

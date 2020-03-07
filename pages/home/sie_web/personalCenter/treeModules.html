@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>模块管理</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!--layui配置 -->
+    <link rel="stylesheet" href="../../layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../../layuiadmin/style/admin.css" media="all">
+    <script src="../../layuiadmin/layui/layui.js"></script>
+    <!--jquery -->
+    <script type="text/javascript" src="../js/jquery-1.11.1.js"></script>
+    <!--Ztree-->
+    <script src="../js/jquery.ztree.all.min.js"></script>
+    <link rel="stylesheet" href="../css/zTreeStyle.css">
+    <!--zoolina系统基础系统配置-->
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+    <script type="text/javascript" src="/Scripts/common/zoolina.page.whu.plug.new.js"></script>
+    <style>
+        /*左树，右表的布局*/
+        .u-table-outer .layui-card-body{
+            padding: 10px 10px 10px 120px!important;
+        }
+        .ztree li span.button.switch {height:23px}
+        .layui-table-cell {
+            height:auto;
+            overflow:visible;
+            text-overflow:inherit;
+            white-space:normal;
+            word-break: break-all;
+        }
+    </style>
+
+    <script type="text/javascript">
+      let checkedColumn = '';//存放选中栏目所有信息
+      let checkedColumnId = '';
+      let checkedColumnParentId = '';
+      let classification_value = new Array();
+      let maxSort="";
+      $(function() {
+        //获取栏目信息
+        var setting = {
+          data: {
+            simpleData: {
+              enable: true,
+            },
+          },
+          async: {
+            enable: true,
+            type: 'get',
+            dataType: 'json',
+            url: "/home/sie_web/moduleManage/listAllModule.template",
+          },
+          callback: {//请求成功后回调
+            onClick: onclickTree,//点击相关节点触发的事件
+            onAsyncSuccess: ztreeOnAsyncSuccess,//异步加载成功后执行的方法,展开所有节点
+          },
+          view:{
+            showIcon: false,
+          }
+        };
+
+        //点击树触发的事件
+        function onclickTree(event, treeId, treeNode) {
+          checkedColumn = treeNode; //当前节点的所有信息
+          checkedColumnId = treeNode.id; //当前节点的id
+          checkedColumnParentId = treeNode.pId; //当前节点的pid
+          $("#_columns_id").val(checkedColumn.id);
+         // 存储最大sort值
+          getlLastSort(checkedColumn.id);
+          //重载表格
+          _reload();
+        };
+
+        // 获取该节点的子树的最大sort
+        function getlLastSort(id) {
+          let obj = new Array();
+          let Result = function() {
+            const json_data = $.parseJSON(obj[0]);
+            maxSort =json_data.value;
+          };
+          getFromWS("/home/sie_web/moduleManage/getLastSort.template", "id="+id, obj, Result);
+        }
+
+        //获取树成功后进行的回调操作
+        function ztreeOnAsyncSuccess(event, treeId, treeNode) {
+          //只显示所有一级栏目
+          var zTree_Menu = $.fn.zTree.getZTreeObj("tree");
+          var node = zTree_Menu.getNodeByParam("id",0);//获取指定ID的节点
+          zTree_Menu.expandNode(node, true, false);//指定选中ID节点展开
+        }
+        $.fn.zTree.init($('#tree'), setting);
+        let strHtml_1 = ``;
+        let objTrans = new Array();
+        let this_Result = function() {
+          const json_data = $.parseJSON(objTrans[0]);
+          classification_value = json_data;
+          for(var i = 0;i<json_data.length;i++)
+          {
+            strHtml_1 +=`
+                                <input type="checkbox" name="edit_authority" id="check_box_${json_data[i].value}" class="layui-input" value="${json_data[i].value}"  title="${json_data[i].title}">
+                            `
+          }
+          $("#editAuthority").append(strHtml_1);
+        };
+        getFromWS("/home/sie_web/moduleManage/listAllClassification.template", "id="+checkedColumnId, objTrans, this_Result);
+      });
+
+      //重载表格
+      function _reload() {
+        layui.use('table', function() {
+          let keywords = $('#searchInput').val();
+          var table = layui.table;
+          table.reload('modulesTable', {
+            url: "/home/sie_web/moduleManage/listModule.template",
+            where: { //设定异步数据接口的额外参数，任意设
+              keywords: keywords,
+              columnsId: checkedColumn.id,
+            }
+            , page: {
+              curr: 1, //重新从第 1 页开始
+            },
+          });
+        });
+      }
+
+      //加载table
+      layui.use(['table', 'form', 'jquery'], function() {
+        var table = layui.table;
+        var form = layui.form;
+        var $ = layui.$;
+        table.render({
+          elem: '#modulesTable'
+          , url: "/home/sie_web/moduleManage/listModule.template"
+          , cols: [
+            [
+              {type: 'checkbox'}
+              , {field: 'sort', title: '序号', width: 60, align: 'center'}
+              , {field: 'name', title: '模块名称', align: 'center'}
+              , {field: 'parent_name', title: '父模块', align: 'center'}
+              , {field: 'url', title: '引用地址', align: 'left'}
+              , {field: 'classification', title: '可见性', align: 'center'}
+              , {title: '操作', toolbar: '#barDemo', width: 120, align: 'center'}
+            ]
+          ]
+          , page: true,
+        });
+        //监听行工具事件
+        table.on('tool(modulesTable)', function(obj) {
+          var data = obj.data;
+          // 删除模块
+          if (obj.event === 'del') {
+            let obj = new Array();
+            let Result = function() {
+            const json_data = JSON.parse(obj[0]);
+            if (json_data[0].code == "1") {
+              // 删除成功后操作
+              layer.msg(`${json_data[0].data}`, function() {
+              });
+              window.location.reload();
+            } else {
+              //删除失败操作
+              layer.msg(`${json_data[0].data}`, function() {
+              });
+            }
+            };
+            getFromWS("/home/sie_web/moduleManage/delModule.template", 'id=' + data.id, obj, Result);
+          } else if (obj.event === 'edit') {
+            // 编辑模块
+            if(data.name=="模块管理")
+            {
+              layer.msg(`当前模块不允许修改`, function() {
+                //关闭后的操作
+              });
+            }else
+            {
+              let obj = new Array();
+              let Result = function() {
+                let moduleInfo = JSON.parse(obj[0]);
+                // 如果没有任何人对该模块具有权限，则不对checkbox进行修改
+                if(moduleInfo[0].classification.length!=0)
+                {
+                  let this_authority_names = new Array();
+                  let arr = moduleInfo[0].classification.split(",");
+                  // 对已经可见的权限可视化
+                  let j =0;
+                  for(var i =0;i<arr.length;i++)
+                  {
+                    var this_one = classification_value.filter((p) => {
+                      return p.title == arr[i];
+                    });
+                    this_authority_names[j] = "check_box_"+this_one[0].value;
+                    j++;
+                  }
+                  for(var i=0;i<this_authority_names.length;i++)
+                  {
+                    $('#edit-Module input[ id=\''+this_authority_names[i]+'\' ] ').prop('checked',true);
+                  }
+                }
+                //更新弹出层的表单
+                $('#edit-Module input[ name=\'edit_name\' ] ').val(moduleInfo[0].name);
+                $('#edit-Module input[name = \'edit_url\']').val(moduleInfo[0].url);
+                $('#edit-Module input[ name = \'edit_sort\']').val(moduleInfo[0].sort);
+                $('#edit-Module input[ name=\'edit_icon\' ] ').val(moduleInfo[0].icon);
+                form.render();
+              }
+              getFromWS("/home/sie_web/moduleManage/loadModule.template", 'id=' + data.id, obj, Result);
+              layer.open({
+                type: 1,
+                area: ['500px','400px'],
+                shadeClose: true, //点击遮罩关闭
+                title: '编辑模块信息',
+                content: $('#edit-Module'),
+                btn:['确定'],
+                btn1:function()
+                {
+                  let name = $('#edit-Module input[ name=\'edit_name\' ] ').val();
+                  let arr = new Array();
+                  let Url = $('#edit-Module input[ name=\'edit_url\' ] ').val();
+                  let sort =  $('#edit-Module input[ name = \'edit_sort\']').val();
+                  let icon = $('#edit-Module input[ name=\'edit_icon\' ] ').val();
+                  $("input:checkbox[name='edit_authority']:checked").each(function(i) {
+                    arr[i] = $(this).val();
+                  });//获取checkbox选中的权限的value
+                  let authority = "," + arr.join(",") + ",";//将数组合并成字符串
+                  $(function() {
+                    // isNaN()函数 把空串 空格 以及NUll 按照0来处理 所以先去除
+                    if (sort == "" || sort ==null||isNaN(sort)) {
+                      layer.msg(`请填写数字`, function() {
+                        //关闭后的操作
+                      });
+                    } else  {
+                      let obj = new Array();
+                      let Result = function() {
+                        if (obj[0].startsWith("ok$^@^$UPDATED=")) {
+                          //修改成功
+                          //关闭最新的弹出层
+                          layer.close(layer.index);
+                          window.location.reload();
+                        } else {
+                          layer.msg(`失败,${obj[0]}`, function() {
+                            //关闭后的操作
+                          });
+                        }
+                      }
+                      let postdata = 'name=' + name + '$^@^$authority=' + authority + '$^@^$url=' + Url + '$^@^$id=' +
+                          data.id+'$^@^$sort='+sort + '$^@^$icon=' + icon;
+                      getFromWS("/home/sie_web/moduleManage/updateModule.template", postdata, obj, Result);
+                    }
+                  });
+                },
+                btnAlign: 'c',
+                end: function() {
+                  // 清空输入框
+                  $('#edit-Module input[ name=\'edit_name\' ] ').val("");
+                  $('#edit-Module input[name = \'edit_url\']').val("");
+                  $('#edit-Module input[ name = \'edit_sort\']').val("");
+                  $('#edit-Module input[ name = \'edit_icon\']').val("");
+                  for(var i=1;i<(classification_value.length+1);i++)
+                  {
+                    $('#edit-Module input[ id= \'check_box_'+i.toString()+'\' ] ').prop('checked',false);
+                  }
+                  form.render();
+                }
+              });
+            }
+          }
+        });
+
+        //批量删除
+        $("#batchDelete").click(function() {
+          var checkStatus = table.checkStatus('modulesTable');
+          var data = checkStatus.data;
+          if (data == '') {
+            //关闭后的操作
+            layer.msg(`请选择要删除的模块`, function() {
+            });
+          } else {
+            layer.confirm('确定批量删除这些模块？', function(index) {
+              let ModuleIds = '';
+              let ModuleCount = 0;
+              for (var i = 0; i < data.length; i++) {
+                ModuleIds = ModuleIds + data[i].id + ',';
+                ModuleCount++;
+              }
+              let obj = new Array();
+              let Result = function() {
+                const json_data = JSON.parse(obj[0]);
+                if (json_data[0].code =="1") {
+                  //删除成功操作
+                  window.location.reload();
+                  layer.msg(`${json_data[0].data}`, function() {
+                  });
+                  layer.close(layer.index);
+                } else {
+                  //删除失败操作
+                  layer.msg(`${json_data[0].data}`, function() {
+                  });
+                }
+              };
+              getFromWS("/home/sie_web/moduleManage/sDelModules.template",
+                  'ids=' + ModuleIds + '$^@^$ModuleCount=' + ModuleCount, obj, Result);
+              layer.close(index);
+            });
+          }
+        });
+
+        //搜索
+        $("#search").click(function() {
+          var data = $('#searchInput').val();
+          $('#searchInput').val("");
+          //重载表格
+          layui.use('table', function() {
+            var table = layui.table;
+            table.reload('modulesTable', {
+              url: '/home/sie_web/moduleManage/listModule.template',
+              where: { //设定异步数据接口的额外参数，任意设
+                keywords: data,
+              }
+              , page: {
+                curr: 1, //重新从第 1 页开始
+              }
+            });
+          });
+        });
+
+        //新增模块信息-弹出层
+        $('#addModule').click(function() {
+          if (checkedColumn == '') {
+            layer.msg(`请先选择新增模块希望放在哪个已有模块下`, function() {
+            });
+          }else {
+            if(checkedColumn.id=='0')
+            {
+              $('#edit-Module input[name = \'edit_url\']').prop("disabled",true);
+              $('#edit-Module input[name = \'edit_url\']').prop("placeholder","主模块无法添加引用地址");
+            }
+            let objTrans = new Array();
+            let getResult = function() {
+                let moduleInfo = JSON.parse(objTrans[0]);
+                let sort = parseInt(maxSort);
+                sort += 10;
+                $('#edit-Module input[name = \'edit_sort\']').val(sort.toString());
+                if(moduleInfo[0].classification.length!=0)
+                {
+                  let this_authority_names = new Array();
+                  let arr = moduleInfo[0].classification.split(",");
+                  // 对已经可见的权限可视化
+                  let j =0;
+                  for(var i =0;i<arr.length;i++)
+                  {
+                    var this_one = classification_value.filter((p) => {
+                      return p.title == arr[i];
+                    });
+                    this_authority_names[j] = "check_box_"+this_one[0].value;
+                    j++;
+                  }
+                  for(var i=0;i<this_authority_names.length;i++)
+                  {
+                    $('#edit-Module input[ id=\''+this_authority_names[i]+'\' ] ').prop('checked',true);
+                  }
+                  form.render();
+                }
+                layer.open({
+                  type: 1,
+                  area: ['500px', '400px'],
+                  shadeClose: true, //点击遮罩关闭
+                  title: '新增模块信息',
+                  btn: ['确定'],
+                  scrollbar: false,
+                  btn1: function() {
+                    let name = $('#edit-Module input[ name=\'edit_name\' ] ').val();
+                    let arr = new Array();
+                    let Url = $('#edit-Module input[ name=\'edit_url\' ] ').val();
+                    let sort = $('#edit-Module input[ name=\'edit_sort\' ] ').val();
+                    let icon = $('#edit-Module input[ name=\'edit_icon\' ] ').val();
+                    $("input:checkbox[name='edit_authority']:checked").each(function(i) {
+                      arr[i] = $(this).val();
+                    });//获取checkbox选中的权限的value
+                    let authority = "," + arr.join(",") + ",";//将数组合并成字符串
+                    //模块名称不能为模块管理
+                    if(name=="模块管理")
+                    {
+                      layer.msg(`创建失败,无法创建该名称的模块`, function() {
+                      });
+                    }
+                    else
+                    {
+                      let obj = new Array();
+                      let Result = function() {
+                        if (obj[0].startsWith("ok$^@^$UPDATED=")) {
+                          //修改成功
+                          //关闭最新的弹出层
+                          layer.close(layer.index);
+                          $('#edit-Module input[name = \'edit_sort\']').prop("disabled",false);
+                          form.render();
+                          window.location.reload();
+                        } else {
+                          layer.msg(`失败,${obj[0]}`, function() {
+                            //关闭后的操作
+                          });
+                        }
+                      }
+                      let postdata = 'name=' + name + '$^@^$authority=' + authority + '$^@^$url=' + Url +
+                          '$^@^$parent_id=' + checkedColumn.id  + '$^@^$sort=' + sort + '$^@^$icon=' + icon;
+                      getFromWS('/home/sie_web/moduleManage/addModule.template', postdata, obj, Result);
+                    }
+                  },
+                  btnAlign: 'c',
+                  content: $('#edit-Module'),
+                  end: function() {
+                    // 清空输入框
+                    $('#edit-Module input[ name=\'edit_name\' ] ').val("");
+                    $('#edit-Module input[name = \'edit_url\']').val("");
+                    $('#edit-Module input[ name = \'edit_sort\']').val("");
+                    $('#edit-Module input[ name = \'edit_icon\']').val("");
+                    $('#edit-Module input[name = \'edit_sort\']').prop("disabled",false);
+                    $('#edit-Module input[name = \'edit_url\']').prop("disabled",false);
+                    $('#edit-Module input[name = \'edit_url\']').prop("placeholder","");
+                    for(var i=1;i<(classification_value.length+1);i++)
+                    {
+                      $('#edit-Module input[ id= \'check_box_'+i.toString()+'\' ] ').prop('checked',false);
+                    }
+                    form.render();
+                  }
+                });
+            }
+            getFromWS('/home/sie_web/moduleManage/loadModule.template', "id="+checkedColumn.id, objTrans, getResult);
+          }
+        });
+      });
+
+      //图标选择-弹出层
+      function icon_select() {
+        layer.open({
+          type: 1,
+          area: ['260px', '300px'],
+          shadeClose: true, //点击遮罩关闭
+          title: '图标选择',
+          content: $('#module_icon'),
+        });
+      }
+
+      /**
+       * 将相应的内容进行转化成对应的图标选择
+       * @param obj this指代对应的html元素
+       * @private
+       */
+      function _select(obj) {
+        const se_icon = $(obj).attr("class").replace("layui-icon ", "")
+        layer.close(layer.index);
+        $('#edit-Module input[ name = \'edit_icon\']').val(se_icon);
+      }
+
+    </script>
+</head>
+
+<body>
+<input type="hidden" value="0" id="_columns_id">
+<div class="layui-fluid" style="top: 20px;">
+    <div class="layui-card u-table-outer">
+        <div class="layui-form layui-card-header">
+            <h2>模块管理</h2>
+        </div>
+        <div class="layui-card-body card-outer"  style="position: relative;">
+            <div class="zTreeDemoBackground left" style="position: absolute;left: 0px;top: 10px;">
+                <ul id="tree" class="ztree"></ul>
+            </div>
+            <div class="article-table" style="margin-left: 20px;">
+                <div class="table-header-btn" style="display: flex;align-items: center;padding: 4px 0">
+                    <div class="layui-btn-container">
+                        <button class="layui-btn u-btn layui-btn-sm" id="batchDelete">批量删除</button>
+                        <button class="layui-btn u-btn layui-btn-sm" id="addModule">添加模块</button>
+                    </div>
+                    <div class="search-outer">
+                        <div class="layui-inline">
+                            <input class="layui-input" name="id" id="searchInput" autocomplete="off"
+                                   placeholder="模块名 / 文件引用">
+                        </div>
+                        <button class="layui-btn layui-btn-sm" id="search">搜索</button>
+                    </div>
+                </div>
+                <table class="layui-hide" id="modulesTable" lay-filter="modulesTable"></table>
+                <script type="text/html" id="barDemo">
+                    <a class="layui-btn layui-btn-xs" lay-event="edit" id = "">编辑</a>
+                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="/Scripts/StationJSLib-kindeditor.js"></script>
+</body>
+
+<div id="edit-Module" class="edit-Column" style="display: none">
+    <form class="layui-form" style="margin-top: 15px;" lay-filter="edit_Module">
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">模块名称</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="edit_name" lay-verify="required" autocomplete="off"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline" style=" margin-top: 10px">
+                <label class="layui-form-label">模块地址</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="edit_url"  autocomplete="off"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline" style=" margin-top: 10px">
+                <label class="layui-form-label">排序</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="edit_sort" lay-verify="required" autocomplete="off"
+                           class="layui-input" placeholder="顺序排列">
+                </div>
+            </div>
+            <div class="layui-inline" style=" margin-top: 10px">
+                <label class="layui-form-label">模块图标</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="edit_icon" onclick="icon_select()" autocomplete="off"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-row layui-col-space10"  style="margin-top: 10px;">
+                <label class="layui-form-label">可见权限</label>
+                <div class = "layui-input-block" id="editAuthority">
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!--图标弹出层-->
+<div id="module_icon" style="display: none;">
+    <a class="layui-icon layui-icon-rate-half" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-rate" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-rate-solid" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-cellphone" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-vercode" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-login-wechat" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-login-qq" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-login-weibo" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-password" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-username" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-refresh-3" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-auz" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-spread-left" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-shrink-right" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-snowflake" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-tips" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-note" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-home" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-senior" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-refresh" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-refresh-1" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-theme" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-notice" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-website" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-console" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-face-surprised" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-set" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-template-1" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-app" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-template" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-praise" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-tread" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-male" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-female" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-camera" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-camera-fill" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-more" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-more-vertical" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-rmb" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-dollar" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-diamond" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-return" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-location" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-read" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-survey" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-face-smile" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-face-cry" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-cart-simple" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-cart" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-next" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-prev" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-upload-drag" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-upload" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-download-circle" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-component" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-file-b" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-user" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-find-fill" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-loading" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-loading-1" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-add-1" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-play" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-pause" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-headset" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-video" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-voice" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-speaker" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-fonts-del" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-fonts-code" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-fonts-html" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-fonts-strong" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-unlink" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-picture" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-link" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-face-smile-b" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-align-left" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-align-right" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-align-center" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-fonts-u" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-fonts-i" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-tabs" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-radio" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-circle" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-edit" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-share" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-delete" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-form" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-cellphone-fine" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-dialogue" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-fonts-clear" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-layer" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+    <a class="layui-icon layui-icon-date" style="cursor:pointer; font-size: 32px; width: 35px; display: inline" onclick="_select(this)"></a>
+</div>
+</html>

@@ -1,0 +1,26 @@
+<%
+    /// 文 件 名：getNextAndPrevious
+    /// 描    述：上一篇下一篇文章搜寻(用一句话描述该文件做什么)  
+    /// 项目名称：SIE      
+    /// 作    者：武汉大学国家网络安全学院@陈添  
+    /// 发布日期：2019/10/15 16:31  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+  :sql_getArticleId = "SELECT id,title FROM policy ORDER BY publish_date"
+  :resultRecord = changeRecordSet(:sql_getArticleId)
+  debugMsg(publish_date+"show_time")
+  :record_items_json_array = ""
+  Repeat
+    :jsonDataItem = ""
+    :jsonDataItem = jsonAddItem(:jsonDataItem, "id", S(id))
+    :jsonDataItem = jsonAddItem(:jsonDataItem, "title", S(title))
+
+    :record_items_json_array = jsonAddArrayItem(:record_items_json_array, :jsonDataItem)
+  EndRepeat
+    :result_records_json_items = jsonAddItem(:result_records_json_items,"data",:record_items_json_array)
+    =:result_records_json_items
+%>

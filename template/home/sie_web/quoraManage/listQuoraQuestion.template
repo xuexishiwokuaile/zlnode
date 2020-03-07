@@ -1,0 +1,121 @@
+<%
+    /// 文 件 名：listQuoraQuestion
+    /// 描    述：列表展示问题信息
+    /// 项目名称：GJY_test      
+    /// 作    者：
+    /// 发布日期：
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+
+debugMsg("======userName:"+:userName  +"=======classification:"+:classification+"=============")
+  :offset = (:page-1)*:limit
+
+///管理员登录查看所有问题
+If :classification == "1"
+  ///查看所有问题
+  If :status == ""
+    :sql_getCount = "SELECT * FROM question"
+    :resultRecord = changeRecordSet(:sql_getCount)
+    :recordNum = recordCount()
+    :jsonResult = ""
+    :jsonResult = jsonAddItem(:jsonResult,"count",:recordNum)
+    :sql_listQuoraQuestion = "SELECT * FROM question ORDER BY publish_date DESC LIMIT ? OFFSET ?"
+    :resultRecord = changeRecordSet(:sql_listQuoraQuestion,S(:limit),S(:offset))
+  EndIf
+  ///查看审核未通过的问题
+  If :status == "-1"
+    :sql_getCount = "SELECT * FROM question WHERE status='-1'"
+    :resultRecord = changeRecordSet(:sql_getCount)
+    :recordNum = recordCount()
+    :jsonResult = ""
+    :jsonResult = jsonAddItem(:jsonResult,"count",:recordNum)
+    :sql_listQuoraQuestion = "SELECT * FROM question WHERE status='-1' ORDER BY publish_date DESC LIMIT ? OFFSET ?"
+    :resultRecord = changeRecordSet(:sql_listQuoraQuestion,S(:limit),S(:offset))
+  EndIf
+  ///查看待审核的问题
+  If :status == "0"
+    :sql_getCount = "SELECT * FROM question WHERE status='0'"
+    :resultRecord = changeRecordSet(:sql_getCount)
+    :recordNum = recordCount()
+    :jsonResult = ""
+    :jsonResult = jsonAddItem(:jsonResult,"count",:recordNum)
+    :sql_listQuoraQuestion= "SELECT * FROM question WHERE status='0' ORDER BY publish_date DESC LIMIT ? OFFSET ?"
+    :resultRecord = changeRecordSet(:sql_listQuoraQuestion,S(:limit),S(:offset))
+  EndIf
+  ///查看已发布的问题
+  If :status == "1"
+    :sql_getCount = "SELECT * FROM question WHERE status='1'"
+    :resultRecord = changeRecordSet(:sql_getCount)
+    :recordNum = recordCount()
+    :jsonResult = ""
+    :jsonResult = jsonAddItem(:jsonResult,"count",:recordNum)
+    :sql_listQuoraQuestion = "SELECT * FROM question WHERE status='1' ORDER BY publish_date DESC LIMIT ? OFFSET ?"
+    :resultRecord = changeRecordSet(:sql_listQuoraQuestion,S(:limit),S(:offset))
+  EndIf
+EndIf
+///教师查看自己的文章
+If :classification == "3"
+  ///查看所有文章
+  If :status == ""
+    :sql_getCount = "SELECT * FROM culture WHERE publisher=?"
+    :resultRecord = changeRecordSet(:sql_getCount,S(:userName))
+    :recordNum = recordCount()
+    :jsonResult = ""
+    :jsonResult = jsonAddItem(:jsonResult,"count",:recordNum)
+    :sql_listCultureArticle = "SELECT * FROM culture WHERE publisher=? ORDER BY publish_date DESC LIMIT ? OFFSET ?"
+    :resultRecord = changeRecordSet(:sql_listCultureArticle,S(:userName),S(:limit),S(:offset))
+  EndIf
+  ///查看审核未通过的文章
+  If :status == "-1"
+    :sql_getCount = "SELECT * FROM culture WHERE publisher=? AND status='-1'"
+    :resultRecord = changeRecordSet(:sql_getCount,S(:userName))
+    :recordNum = recordCount()
+    :jsonResult = ""
+    :jsonResult = jsonAddItem(:jsonResult,"count",:recordNum)
+    :sql_listCultureArticle = "SELECT * FROM culture WHERE publisher=? AND status='-1' ORDER BY publish_date DESC LIMIT ? OFFSET ?"
+    :resultRecord = changeRecordSet(:sql_listCultureArticle,S(:userName),S(:limit),S(:offset))
+  EndIf
+  ///查看待审核的文章
+  If :status == "0"
+    :sql_getCount = "SELECT * FROM culture WHERE publisher=? AND status='0'"
+    :resultRecord = changeRecordSet(:sql_getCount,S(:userName))
+    :recordNum = recordCount()
+    :jsonResult = ""
+    :jsonResult = jsonAddItem(:jsonResult,"count",:recordNum)
+    :sql_listCultureArticle = "SELECT * FROM culture WHERE publisher=? AND status='0' ORDER BY publish_date DESC LIMIT ? OFFSET ?"
+    :resultRecord = changeRecordSet(:sql_listCultureArticle,S(:userName),S(:limit),S(:offset))
+  EndIf
+  ///查看已发布的文章
+  If :status == "1"
+    :sql_getCount = "SELECT * FROM culture WHERE publisher=? AND status='1'"
+    :resultRecord = changeRecordSet(:sql_getCount,S(:userName))
+    :recordNum = recordCount()
+    :jsonResult = ""
+    :jsonResult = jsonAddItem(:jsonResult,"count",:recordNum)
+    :sql_listCultureArticle = "SELECT * FROM culture WHERE publisher=? AND status='1' ORDER BY publish_date DESC LIMIT ? OFFSET ?"
+    :resultRecord = changeRecordSet(:sql_listCultureArticle,S(:userName),S(:limit),S(:offset))
+  EndIf
+EndIf
+  :jsonItemArray = ""
+  Repeat
+    :jsonItem = ""
+    :jsonItem = jsonAddItem(:jsonItem,"id",S(id))
+    :jsonItem = jsonAddItem(:jsonItem,"title",S(title))
+    :jsonItem = jsonAddItem(:jsonItem,"status",S(status))
+    :jsonItem = jsonAddItem(:jsonItem,"publicTime",S(publish_date))
+    :jsonItem = jsonAddItem(:jsonItem,"content",S(content))
+    :jsonItem = jsonAddItem(:jsonItem,"picID",S(pic_id))
+    :jsonItem = jsonAddItem(:jsonItem,"publisher",S(publisher))
+    :jsonItem = jsonAddItem(:jsonItem,"reason",S(reason))
+
+    :jsonItemArray = jsonAddArrayItem(:jsonItemArray,:jsonItem)
+  EndRepeat
+  :jsonResult = jsonAddItem(:jsonResult,"data",:jsonItemArray)
+  :jsonResult = jsonAddItem(:jsonResult,"code","0")
+  :jsonResult = jsonAddItem(:jsonResult,"msg","")
+  =:jsonResult
+%>

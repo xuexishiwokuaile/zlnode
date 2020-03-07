@@ -1,0 +1,43 @@
+<%
+    /// 文 件 名：getUserLeftMenu
+    /// 描    述：获取个人中心左侧菜单栏
+    /// 项目名称：GJY_test      
+    /// 作    者：武汉大学国家网络安全学院@王顺福    
+    /// 发布日期：2019/9/26 16:06  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+<%
+
+debugMsg("getUserLeftMenu.template-line14:classification="+:classification)
+///管理员登录
+If :classification == "1"
+  %>
+  <li id="personalHome" class="layui-nav-item"><a href="home.html"><i class="layui-icon">&#xe609;</i>我的主页</a></li>
+  <li id="personalArticle" class="layui-nav-item"><a href="article.html"><i class="layui-icon">&#xe705;</i>我的文章</a></li>
+  <li id="personalSet" class="layui-nav-item"><a href="set.html"><i class="layui-icon">&#xe612;</i>个人设置</a></li>
+  <li id="personalMessage" class="layui-nav-item"><a href="message.html"><i class="layui-icon">&#xe611;</i>我的消息</a></li>
+  <li id="personalManage" class="layui-nav-item"><a href="personManage.html"><i class="layui-icon">&#xe716;</i>人员管理</a></li>
+  <%
+EndIf
+///学生登录
+If :classification == "2"
+  %>
+  <li id="personalHome" class="layui-nav-item"><a href="home.html"><i class="layui-icon">&#xe609;</i>我的主页</a></li>
+  <li id="personalSet" class="layui-nav-item"><a href="set.html"><i class="layui-icon">&#xe612;</i>个人设置</a></li>
+  <li id="personalMessage" class="layui-nav-item"><a href="message.html"><i class="layui-icon">&#xe611;</i>我的消息</a></li>
+  <%
+EndIf
+///教师登录
+If :classification == "3"
+  %>
+  <li id="personalHome" class="layui-nav-item"><a href="home.html"><i class="layui-icon">&#xe609;</i>我的主页</a></li>
+  <li id="personalArticle" class="layui-nav-item"><a href="article.html"><i class="layui-icon">&#xe705;</i>我的文章</a></li>
+  <li id="personalSet" class="layui-nav-item"><a href="set.html"><i class="layui-icon">&#xe612;</i>个人设置</a></li>
+  <li id="personalMessage" class="layui-nav-item"><a href="message.html"><i class="layui-icon">&#xe611;</i>我的消息</a></li>
+  <%
+EndIf
+
+%>

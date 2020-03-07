@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>课程管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="fly,layui,前端社区">
+    <meta name="description" content="Fly社区是模块化前端UI框架Layui的官网社区，致力于为web开发提供强劲动力">
+    <link rel="stylesheet" href="../css/layui/css/layui.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <script src="https://cdn.bootcss.com/jquery/3.4.0/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../css/layui/jquery.ztree.core.js"></script>
+    <link rel="stylesheet" href="../css/bootstrapStyle/bootstrapStyle.css">
+
+    <link rel="stylesheet" type="text/css" href="../css/index.css" />
+    <link rel="stylesheet" type="text/css" href="../css/comm.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+
+    <link rel="stylesheet" type="text/css" href="../css/article.css" />
+
+    <!--文本编辑器js-->
+    <script type="text/javascript" charset="utf-8" src="../js/wangEditor/wangEditor.js"></script>
+    <!--jQuery以及zoolina-->
+    <script src="../js/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+    <!--<script type="text/javascript" src="/Scripts/uploadfile.js"></script>-->
+    <script type="text/javascript" src="../js/uploadFile.js"></script>
+    <!--    <script type="text/javascript" src="/Scripts/StationJSLib-bak.js"></script>-->
+    <!--    <script type="text/javascript" src="/Scripts/StationJSLib-kindeditor.js"></script>-->
+</head>
+<body style="margin: 0;">
+<script>
+  //定义多个文本编辑器
+  var E = window.wangEditor;
+  var articleEditor = new E('#articleEditor');//新建文章
+  var modifyEditor = new E('#modifyEditor');//修改文章
+  var content = new E('#content');//审核时查看文章内容
+  var reviewResult = new E('#reviewResult');//审核结果
+
+  // 重载列表
+  function reloadTable(selectKey) {
+    console.log(selectKey);
+    layui.use('table', function() {
+      var table = layui.table;
+      table.reload('test', {
+        url: '/home/sie_web/courseManage/listCourse.template',
+        where:{
+          selectKey:selectKey
+        },
+        page: {
+          curr: 1, //重新从第 1 页开始
+        },
+      });
+    });
+    $("#selectKey").val(selectKey);
+  }
+
+  // 删除课程类别
+  function deleteCourseCategory(id) {
+    var obj_deleteCourseCategory = new  Array();
+    var processResult_deleteCourseCategory=function() {
+      if (obj_deleteCourseCategory[0] == "ok"){
+        layer.alert("课程类别删除成功！",function() {
+          layer.closeAll();
+        });
+        reloadTable();
+      }
+      else {
+        layer.alert("删除课程类别失败，请稍后重试！")
+      }
+    };
+    getFromWS("home/sie_web/courseManage/deleteCourseCategory.template","id="+id,obj_deleteCourseCategory,processResult_deleteCourseCategory);
+  }
+
+  $(function() {
+    let userName = sessionStorage.getItem("loginName");
+    let userToken = sessionStorage.getItem("userToken");
+    let userId = sessionStorage.getItem("userId");
+    console.log(userToken == null);
+    let classification = sessionStorage.getItem("classification");
+
+    let objCheckLogin = new Array();
+    var checkLoginResult = function() {
+      console.log(objCheckLogin);
+      console.log("用户状态："+objCheckLogin[0]);
+      if (objCheckLogin[0] == 'bad' || objCheckLogin[0] == 'failed' || userName == null || userToken == null || userName == ' ' || userToken == ' ') {
+        sessionStorage.setItem('userId', ' ');
+        sessionStorage.setItem('userToken', ' ');
+        sessionStorage.setItem('classification', ' ');
+        sessionStorage.setItem('loginName', ' ');
+        var hrefPage = '/pages/home/sie_web/personalCenter/article.html';
+        console.log(hrefPage);
+        sessionStorage.setItem('hrefPage', hrefPage);
+        $('.rigster a').text('注册');
+        $('.login a').text('登录');
+        $('.login a').attr('href', 'login.html');
+      }else{
+        var name = sessionStorage.getItem("name");
+        console.log(name);
+        // 登录状态有效
+        if (userToken != null) {
+          $('.rigster a').text('退出');
+          $('.rigster a').attr('href', '/pages/home/sie_web/index.html');
+          $('.rigster a').click(function() {
+            sessionStorage.setItem('userId', ' ');
+            sessionStorage.setItem('userToken', ' ');
+            sessionStorage.setItem('classification', ' ');
+            sessionStorage.setItem('loginName', ' ');
+            sessionStorage.setItem('id', '');
+            sessionStorage.setItem('name', '');
+            var hrefPage = '/pages/home/sie_web/personalCenter/article.html';
+            console.log(hrefPage);
+            sessionStorage.setItem('hrefPage', hrefPage);
+          });
+          $('.login a').attr('href', '/pages/home/sie_web/personalCenter/home.html');
+          $('.login a').text(name);
+        }
+      }
+    };
+    getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+    // 加载文本编辑器
+    //新建文章
+    setUploadImg(articleEditor);
+    articleEditor.create();
+    //修改文章
+    modifyEditor.create();
+    // 审核文章，不允许编辑且隐藏工具栏
+    content.create();
+    reviewResult.create();
+  });
+
+  //自定义图片上传方法
+  function setUploadImg(editor) {
+    editor.customConfig.customUploadImg = function(files,insert) {
+      console.log(files);
+      for (var i = 0; i < files.length; i++) {
+        var processResult_uploadImg = function(picId){
+          var imgUrl = "/one/downloadFile.spe?dtype=PostgresXL&mode=html&fileid="+picId;
+          console.log(imgUrl);
+          var img = '<img src="'+imgUrl+'"></img>';
+          editor.txt.append(img);
+        };
+        uploadToDatabase(files[i],processResult_uploadImg,"databaseType=Sqldb")
+      }
+    }
+  }
+
+</script>
+<div class="main_container">
+    <div class="layui-container fly-marginTop fly-user-main">
+        <div class="fly-panel" style="margin: 0 0 30px 0;" pad20>
+            <table class="layui-hide" id="test" lay-filter="test"></table>
+
+            <script type="text/html" id="toolbarDemo">
+                <div class="layui-btn-container" style="display: flex">
+                    <button class="layui-btn layui-btn-sm" lay-event="new">新建课程类别</button>
+                    <input type="text" class="selectKey" id="selectKey">
+                    <button class="layui-btn layui-btn-sm" lay-event="select">搜索</button>
+                </div>
+            </script>
+
+            <script src="../css/layui/layui.js"></script>
+
+            <script>
+              layui.use('table', function() {
+                var selectKey = '';
+                var table = layui.table;
+                table.render({
+                  elem: '#test',
+                  url: '/home/sie_web/courseManage/listCourse.template',
+                  where:{
+                    selectKey:selectKey
+                  },
+                  limit:20,
+                  toolbar: '#toolbarDemo',
+                  cols: [
+                    [
+                      {type: 'checkbox', fixed: 'left'},
+                      {field: 'id', title: '课程类别ID', sort: true},
+                      {field: 'name', title: '课程标题'},
+                      {fixed: 'right', title: '操作',width:170,templet:'#tool'}
+                    ]
+                  ],
+                  page: true
+                });
+
+                //头工具栏事件
+                table.on('toolbar(test)', function(obj) {
+                  console.log(obj);
+                  var checkStatus = table.checkStatus(obj.config.id);
+                  switch (obj.event) {
+                    case 'new':
+                      $("#articleTitle").val("");
+                      $("#articlePublisher").val("");
+                      $("#pictureName").html("");
+                      $("#coverPicture").val("");
+                      layer.open({
+                        type: 1,
+                        area:['25%','50%'],
+                        title: '新建课程类别',
+                        content: $('#newCourseCategory')
+                      });
+                      break;
+                    case 'select':
+                      var selectKey = $("#selectKey").val();
+                      console.log(selectKey);
+                      reloadTable(selectKey);
+                      break;
+                  }
+                });
+
+                //监听行工具事件
+                table.on('tool(test)', function(obj){
+                  var E = window.wangEditor;
+                  var data = obj.data;
+                  if(obj.event === 'del'){
+                    console.log(data.reason);
+                    layer.confirm('真的要删除吗？', {
+                      btn: ['还是算了','残忍删除'] //按钮
+                    }, function(){
+                      layer.msg('真好', {icon: 6});
+                    }, function(){
+                      deleteCourseCategory(data.id);
+                      obj.del();
+                    });
+                  } else if(obj.event === 'modify'){
+                    sessionStorage.setItem("courseCategoryId",data.id);
+                    console.log(data.content);
+                    $("#modifyTitle").val(data.name);
+                    $("#modifyTitle").attr('title',data.name);
+                    layer.open({
+                      type: 1,
+                      area:['50%','50%'],
+                      title: '编辑课程类别 （文章ID为：'+data.id+'）',
+                      content: $('#modifyCourseCategory')
+                    })
+                  }
+                });
+              });
+            </script>
+
+            <script type="text/html" id="articleType">
+                {{# if(d.articleType == 1){ }}
+                <div>{{ "教学活动" }}</div>
+                {{# }else if(d.articleType == 2){ }}
+                <div>{{ "政策公告" }}</div>
+                {{# }else if(d.articleType == 3){ }}
+                <div>{{ "文化交流" }}</div>
+                {{# }else if(d.articleType == 4){ }}
+                <div>{{ "其他新闻" }}</div>
+                {{# } }}
+            </script>
+            <script type="text/html" id="articleStatus">
+                {{# if(d.status == -1){ }}
+                <div class="statusNoPass" style="color: red;" title="点击查看原因" onclick="showReason('{{d.reason}}')">{{ "审核未通过" }}</div>
+                {{# }else if(d.status == 0){ }}
+                <div style="color: orange;">{{ "待审核" }}</div>
+                {{# }else if(d.status == 1){ }}
+                <div style="color: green;">{{ "已发布" }}</div>
+                {{# } }}
+            </script>
+            <script>
+              function showReason(reason) {
+                layer.alert(reason);
+              }
+            </script>
+            <script type="text/html" id="tool">
+                <a class="layui-btn layui-btn-xs" lay-event="modify">编辑</a>
+                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+            </script>
+        </div>
+    </div>
+</div>
+
+</body>
+<!--新建课程类别页面-->
+<div class="newArticle" id="newCourseCategory" style="display: none">
+    <div class="articleHeader">
+        <div class="textArea">
+            <div class="articleTitle">课程类别标题：
+                <input type="text" class="textInput" placeholder="课程类别标题" id="courseCategoryName">
+            </div>
+        </div>
+    </div>
+    <div class="button-box">
+        <div class="block"></div>
+        <button class="submit" id="submitCourseCategory">提交</button>
+        <button class="return" onclick="layer.closeAll()">返回</button>
+    </div>
+</div>
+
+<script>
+  // 提交课程类别
+  $("#submitCourseCategory").click(function() {
+    var name = $("#courseCategoryName").val();
+    if (name == ''){
+      layer.msg("课程类别标题不能为空",function() {});
+      return false;
+    }
+    var courseCategory = "name="+name;
+    console.log(courseCategory);
+
+    var obj_addCourseCategory = new Array();
+    var processResult_addCourseCategory = function(){
+      if (obj_addCourseCategory[0] == 'ok') {
+        layer.alert("课程类别新建成功！",function() {
+          layer.closeAll();
+        });
+        reloadTable();
+      }
+      else {
+        layer.alert("新建课程类别失败，请稍后重试！")
+      }
+    };
+    getFromWS("home/sie_web/courseManage/addCourseCategory.template",courseCategory,obj_addCourseCategory,processResult_addCourseCategory);
+  })
+</script>
+
+<!--修改文章页面-->
+<div class="newArticle" id="modifyCourseCategory" style="display: none">
+    <div class="articleHeader">
+        <div class="textArea">
+            <div class="articleTitle">课程列表标题：
+                <input type="text" class="textInput" placeholder="课程列表标题" id="modifyTitle">
+            </div>
+        </div>
+    </div>
+    <div class="button-box">
+        <div class="block"></div>
+        <button class="submit" id="updateCourseCategory">修改</button>
+        <button class="return" onclick="layer.closeAll()">返回</button>
+    </div>
+</div>
+
+<script>
+  // 更新课程类别
+  $("#updateCourseCategory").click(function() {
+    var id = sessionStorage.getItem("courseCategoryId");
+    var newName = $("#modifyTitle").val();
+    if (newName == ''){
+      layer.msg("课程类别标题不能为空",function() {});
+      return false;
+    }
+    var newCourseCategory = "name="+newName+"$^@^$id="+id;
+    var obj_updateCourseCategory = new Array();
+    var processResult_updateCourseCategory = function() {
+      if (obj_updateCourseCategory[0] == "ok"){
+        layer.alert("课程类别修改成功！",function() {
+          layer.closeAll();
+        });
+        reloadTable();
+      }
+      else {
+        layer.alert("新建课程类别失败，请稍后重试！")
+      }
+    };
+    getFromWS("home/sie_web/courseManage/updateCourseCategory.template",newCourseCategory,obj_updateCourseCategory,processResult_updateCourseCategory);
+  })
+</script>
+
+</html>

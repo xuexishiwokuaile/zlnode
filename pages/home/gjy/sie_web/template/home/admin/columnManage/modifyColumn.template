@@ -1,0 +1,63 @@
+<%
+    /// 文 件 名：modifyColumn
+    /// 描    述：修改栏目(用一句话描述该文件做什么)  
+    /// 项目名称：sie_web      
+    /// 作    者：武汉大学国家网络安全学院@沈家强    
+    /// 发布日期：2019/6/11 9:51  
+    /// 文件版本：V1.0 
+    /// 注意：本内容仅限于武汉大学国家网络安全学院陈刚教授团队内部传阅，禁止外泄以及用于其他的商业目
+    /// @Copyright: 2019 www.whu.edu.cn. All rights reserved. 
+    /// All rights Reserved, Designed By www.whu.edu.cn
+%>
+
+<%
+  debugMsg("[DEBUGMSG]:modifyColumn.template 位置:13:"+"name="+:name+"=sort="+:sort+"=new_parent_id="+:new_parent_id+"=id="+:id+"=old_parent_id="+:old_parent_id+"=url="+:url)
+  ///是否移动节点
+  If :old_parent_id != :new_parent_id
+      ///移动节点，那么..
+      ///只允许   二级栏目  或  没有二级栏目的一级栏目  进行移动   且  不允许移动到二级栏目上  （会形成三级栏目）
+      If :old_parent_id == 0
+          /// 当前节点是一级栏目  判断是否有子栏目   如果没有  且   新的父节点不是二级栏目   则可以移动
+          :sql_have_child = "SELECT * FROM columns WHERE pid = ?"
+          :resultRecord_have_child = changeRecordSet(:sql_have_child,S(:id))
+          :recordNum = recordCount()
+          :sql_new_is_two="SELECT pid FROM columns WHERE id = ?"
+          :resultRecord_new_is_two = changeRecordSet(:sql_new_is_two,S(:new_parent_id))
+
+          If :recordNum == 0 && pid == 0
+              :sql_modify="UPDATE columns SET pid = ?,sort = ?,name = ?,url=? WHERE id = ?"
+              :resultRecord = execSQL(:sql_modify,S(:new_parent_id),S(:sort),S(:name),S(:url),S(:id))
+              :recordNum = recordCount()
+              =:resultRecord
+          Else
+              ="ban"
+          EndIf
+      Else
+          ///当前节点 是 二级栏目  判断   若   新的父节点不是二级栏目   则可以移动
+          If :new_parent_id == 0
+              /// 新的节点是 根节点  可以直接移动
+              :sql_modify="UPDATE columns SET pid = ?,sort = ?,name = ?,url=? WHERE id = ?"
+              :resultRecord = execSQL(:sql_modify,S(:new_parent_id),S(:sort),S(:name),S(:url),S(:id))
+              :recordNum = recordCount()
+              =:resultRecord
+          Else
+              :sql_new_is_two="SELECT pid FROM columns WHERE id = ?"
+              :resultRecord_new_is_two = changeRecordSet(:sql_new_is_two,S(:new_parent_id))
+              If pid == 0
+                  :sql_modify="UPDATE columns SET pid = ?,sort = ?,name = ?,url=? WHERE id = ?"
+                  :resultRecord = execSQL(:sql_modify,S(:new_parent_id),S(:sort),S(:name),S(:url),S(:id))
+                  :recordNum = recordCount()
+                  =:resultRecord
+              Else
+                  ="ban"
+              EndIf
+          EndIf
+      EndIf
+  Else
+      ///没有移动节点，直接更新其他修改
+      :sql_modify="UPDATE columns SET sort = ?,name = ?,url=? WHERE id = ?"
+      :resultRecord = execSQL(:sql_modify,S(:sort),S(:name),S(:url),S(:id))
+      :recordNum = recordCount()
+      =:resultRecord
+  EndIf
+%>

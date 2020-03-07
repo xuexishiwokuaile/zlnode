@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+	<!-- Head -->
+	<head>
+		<title>新闻动态</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta charset="utf-8">
+		<meta name="keywords" content="" />
+
+		<!-- default css files -->
+		<link rel="stylesheet" href="../css/bootstrap.css" type="text/css" media="all">
+		<link rel="stylesheet" href="../css/style.css" type="text/css" media="all">
+		<link rel="stylesheet" href="../css/font-awesome.min.css" />
+		<!-- default css files -->
+		<!-- 主页css -->
+		<link rel="stylesheet" type="text/css" href="../css/index.css" />
+		<!-- 通用css -->
+		<link rel="stylesheet" type="text/css" href="../css/newsList.css" />
+		<link rel="stylesheet" type="text/css" href="../css/lhcommon.css" />
+
+		<script src="../js/jquery.min.js"></script>
+		<script src="../js/swiper-3.4.2.jquery.min.js"></script>
+		<script type="text/javascript" src="/Scripts/StationJSLib.js"></script>
+
+		<!-- scrolling script -->
+		<script type="text/javascript">
+			//获取页码
+			var articlePage = Request("articlePage");
+
+			function Request(strName){
+				var strHref = location.href;
+				var intPos = strHref.indexOf("?");
+				var strRight = strHref.substr(intPos + 1);
+				var arrTmp = strRight.split("&");
+				for(var i = 0; i < arrTmp.length; i++) {
+					var arrTemp = arrTmp[i].split("=");
+					if(arrTemp[0].toUpperCase() == strName.toUpperCase()){
+						return arrTemp[1];
+					}
+				}
+				return "";
+			}
+
+			jQuery(document).ready(function($) {
+				$(".scroll").click(function(event) {
+					event.preventDefault();
+					$('html,body').animate({
+						scrollTop: $(this.hash).offset().top
+					}, 1000);
+				});
+			});
+
+			$(function() {
+
+				//验证登录状态
+				let userName = sessionStorage.getItem("loginName");
+				let userToken = sessionStorage.getItem("userToken");
+				let userId = sessionStorage.getItem("userId");
+				let classification = sessionStorage.getItem("classification");
+
+				let objCheckLogin = new Array();
+				var checkLoginResult = function() {
+					console.log(objCheckLogin);
+					console.log("用户状态："+objCheckLogin[0]);
+					if(objCheckLogin[0]=="bad" || objCheckLogin[0]=="failed"||userName==null||userToken==null||userName==" "||userToken==" "){
+						sessionStorage.setItem('userId'," ");
+						sessionStorage.setItem('userToken'," ");
+						sessionStorage.setItem('classification'," ");
+						sessionStorage.setItem('loginName'," ");
+						var hrefPage = "/pages/home/sie_web/news/newsList.html?articlePage="+articlePage;
+						console.log(hrefPage);
+						sessionStorage.setItem("hrefPage",hrefPage);
+						$(".rigster a").text("注册");
+						$(".login a").text("登录");
+						$(".login a").attr("href","../login.html");
+						// window.location.reload();
+					}else{
+						var name = sessionStorage.getItem("name");
+						console.log(name);
+						// 登录状态有效
+						if (userToken != null){
+							$(".rigster a").text("退出");
+							$(".rigster a").attr("href","/pages/home/sie_web/news/newsList.html?articlePage="+articlePage);
+							$(".rigster a").click(function() {
+								sessionStorage.setItem('userId'," ");
+								sessionStorage.setItem('userToken'," ");
+								sessionStorage.setItem('classification'," ");
+								sessionStorage.setItem('loginName'," ");
+								sessionStorage.setItem("id","");
+								sessionStorage.setItem("name","");
+								var hrefPage = "/pages/home/sie_web/news/newsList.html?articlePage="+articlePage;
+								console.log(hrefPage);
+								sessionStorage.setItem("hrefPage",hrefPage);
+							});
+							$(".login a").attr("href","/pages/home/sie_web/personalCenter/home.html");
+							$(".login a").text(name);
+						}
+					}
+				};
+				getFromWS("CoreService/checkLogin", "id="+userId+"$^@^$token="+userToken, objCheckLogin, checkLoginResult);
+
+				//获取顶部菜单栏
+				let topMenu = new Array();
+				let topMenuResult = function(){
+					// console.log(topMenu[0]);
+					if(topMenu[0] != "bad"){
+						let menusArray = JSON.parse(topMenu[0]);
+						for(let i=0;i<menusArray.length;i++){
+							if(menusArray[i].name == "新闻动态"){
+								$(".top-menu").append(`
+                        <li class="active"><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+							}else{
+								$(".top-menu").append(`
+                        <li><a href="${menusArray[i].url}" data-hover="${menusArray[i].name}">${menusArray[i].name}</a></li>
+                    `)
+							}
+						}
+					}
+				};
+				getFromWS("home/sie_web/menu/getTopMenu.template","",topMenu,topMenuResult);
+
+				//获取初始数据
+			})
+		</script>
+		<!-- //scrolling script -->
+	</head>
+	<!-- Body -->
+	<body>
+	<div class="banner">
+		<div class="header-top">
+			<div class="header-outer">
+				<div class="header-top-left">
+					<a href="../index.html" class="header-logo"><img src="../images/logo.png"></a>
+					<span class="language">中文</span><span class="language">ENGLISH</span>
+				</div>
+				<div class="header-top-right">
+					<div>
+						<p class="header-email-tel"><i class="fa fa-envelope" aria-hidden="true"></i><a href="mailto:liuyan@whu.edu.cn">LIUYAN@WHU.EDU.CN</a></p>
+						<p class="header-email-tel"><i class="fa fa-phone" aria-hidden="true"></i> +86 8765 8888</p>
+					</div>
+					<div class="login-rigster">
+						<div class="login">
+							<a href="../login.html">登录</a>
+						</div>
+						<div class="rigster">
+							<a href="../login.html">注册</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="head">
+			<div class="container">
+				<div class="navbar-top">
+					<!-- Brand and toggle get grouped for better mobile display -->
+					<div class="navbar-header">
+						<div class="navbar-brand logo">
+							<a href="../index.html" class="header-title">汉语国际推广教学资源研究与开发基地</a>
+						</div>
+					</div>
+					<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+						<ul class="nav navbar-nav link-effect-4 top-menu">
+						</ul>
+					</div>
+				</div>
+				<div class="clearfix"></div>
+			</div>
+		</div>
+		<!-- </div> -->
+		<!-- //banner -->
+		<div class="content">
+			<div id="newsType">
+				<div class="news-guide-bar">
+					<div class="news-category-position">
+						<div class="news-category-position-left">
+							<div class="news-category-title">
+								<strong>新闻动态</strong>
+							</div>
+							<div class="news-category-title-english">
+								<strong>NEWS</strong>
+							</div>
+						</div>
+						<div class="news-category-position-right">
+							<span class="glyphicon glyphicon-home" aria-hidden="true"></span>
+							当前位置：新闻动态>>教学活动
+						</div>
+					</div>
+<!--					<div class="news-categorys">-->
+<!--						<ul>-->
+<!--							<li style="background-color: #cc0000;">教学活动</li>-->
+<!--							<li>政策公告</li>-->
+<!--							<li>文化交流</li>-->
+<!--							<li>其他新闻</li>-->
+<!--						</ul>-->
+<!--					</div>-->
+				</div>
+				<div class="lh-content">
+					<section class="lh-other-box">
+						<div class="container lh-other-container">
+							<h2 class="lh-news-h" data-animated="fadeInUp">
+								<b>
+									教学活动
+								</b>
+								<span></span>
+							</h2>
+							<ul class="lh-news-item" id="articleList"></ul>
+							<!--翻页-->
+							<div class="page" data-animated="fadeInUp" id="articlePage">
+							</div>
+						</div>
+					</section>
+				</div>
+			</div>
+			<!-- copyright -->
+			<div class="copyright links">
+				<div class="container">
+					<div class="copyrightbottom links-outer">
+						<div class="links-title">
+							友情链接
+						</div>
+						<div class="links-items">
+							<div class="links-item">
+								<a href="#">汉语国际推广研究所</a>
+							</div>
+							<div class="links-item">
+								<a href="#">汉语国际推广新师资培养基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">国际汉学家研修基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">汉语国际推广多语种基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">国际汉语教学研究基地</a>
+							</div>
+						</div>
+						<div class="links-items">
+							<div class="links-item">
+								<a href="#">中华传统文化研究与体验基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">汉语国际推广南方基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">国际汉语教师研修基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">国际汉语教材研发与培训基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">国际汉语传播湖南基地</a>
+							</div>
+						</div>
+						<div class="links-items">
+							<div class="links-item">
+								<a href="#">国际商务汉语教学与资源开发基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">国际商务汉语教学与资源开发基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">汉语国际推广东北基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">汉语国际推广多语种大连基地</a>
+							</div>
+							<div class="links-item">
+								<a href="#">东南亚汉语推广师资培训基地</a>
+							</div>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+				</div>
+			</div>
+			<!-- //copyright -->
+			<!-- copyright -->
+			<div class="copyright">
+				<div class="footer">
+					<div class="technical-support">
+						武汉大学国家网络安全学院技术支持
+					</div>
+					<div class="organizer">
+						主办单位：汉语国际推广教学资源研究与开发基地 武汉大学国际教育学院
+					</div>
+					<div class="technical-support">
+						2019@ 技术支持：027-68777156 SHENJIAQIANG@WHU.EDU.CN
+					</div>
+				</div>
+				<div class="clearfix"></div>
+			</div>
+			<!-- //copyright -->
+
+			<!-- model-video -->
+			<!-- Modal5 -->
+			<div class="modal fade" id="myModal1" tabindex="-1" role="dialog">
+				<div class="modal-dialog">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<!-- <iframe src="https://player.vimeo.com/video/77456946?title=0&byline=0&portrait=0"></iframe> -->
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Default-JavaScript-File -->
+			<script type="text/javascript" src="../js/jquery-2.1.4.min.js"></script>
+			<script type="text/javascript" src="../js/bootstrap.js"></script>
+			<!-- //Default-JavaScript-File -->
+
+			<!-- clients js file-->
+			<script src="../js/jquery.wmuSlider.js"></script>
+			<script>
+				$('.example1').wmuSlider();
+			</script>
+			<!-- //clients js file -->
+
+			<!-- Jarallax -->
+			<script src="../js/jarallax.js"></script>
+			<script type="text/javascript">
+				/* init Jarallax */
+				$('.jarallax').jarallax({
+					speed: 0.5,
+					imgWidth: 1366,
+					imgHeight: 768
+				})
+			</script>
+			<!-- //Jarallax -->
+
+			<!-- smooth scrolling -->
+			<!-- <script src="../js/SmoothScroll.min.js"></script> -->
+			<script type="text/javascript" src="../js/move-top.js"></script>
+			<script type="text/javascript" src="../js/easing.js"></script>
+			<!-- here stars scrolling icon -->
+			<script type="text/javascript">
+				//获取页码
+				var articlePage = Request("articlePage");
+
+				function Request(strName){
+					var strHref = location.href;
+					var intPos = strHref.indexOf("?");
+					var strRight = strHref.substr(intPos + 1);
+					var arrTmp = strRight.split("&");
+					for(var i = 0; i < arrTmp.length; i++) {
+						var arrTemp = arrTmp[i].split("=");
+						if(arrTemp[0].toUpperCase() == strName.toUpperCase()){
+							return arrTemp[1];
+						}
+					}
+					return "";
+				}
+
+				$(document).ready(function() {
+					$().UItoTop({
+						easingType: 'easeOutQuart'
+					});
+
+					//加载文章列表
+					var obj_articleList = new Array();
+					function processResult() {
+						$("#articleList").html(obj_articleList[0]);
+					}
+					getFromWS("home/sie_web/articleComment/getArticleList.template","page="+articlePage,obj_articleList,processResult);
+
+					//加载文章页面按钮并检测现在是一页
+					var obj_articlePage = new Array();
+					function processResult_articlePage() {
+						$("#articlePage").html(obj_articlePage[0]);
+					}
+					getFromWS("home/sie_web/articleComment/getArticlePage.template","page="+articlePage,obj_articlePage,processResult_articlePage);
+				});
+			</script>
+		</div>
+	</div>
+
+	</body>
+	<!-- //Body -->
+</html>
